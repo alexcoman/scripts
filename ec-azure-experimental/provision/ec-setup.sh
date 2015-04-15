@@ -32,7 +32,7 @@ AZURE_EXPERIMENTAL="/home/vagrant/elasticluster/azure-experimental"
 function prologue() {
     if [ ! -d "$CERT_DIR" ]; then
       echo "Create $CERT_DIR"
-      mkdir $CERT_DIR
+      mkdir -p $CERT_DIR
     fi
 }
 
