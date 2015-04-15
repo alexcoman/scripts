@@ -4,9 +4,8 @@ set -e
 # Settings
 COUNTRY=""          # Country Name (2 letter code)
 STATE=""            # State or Province Name (full name)
-LOCALITY=""         # Locality Name (eg, city)
 ORGANIZATION=""     # Organization Name (eg, company)
-NAME=""             # Common Name (e.g. server FQDN or YOUR name)
+CNAME=""             # Common Name (e.g. server FQDN or YOUR name)
 EMAIL=""            # Email Address
 
 SUBSCRIPTION=""
@@ -80,7 +79,7 @@ function get_subject() {
         subject+="/O=$ORGANIZATION"
     fi
     if [ $CNAME ]; then
-        subject+="/CN=$NAME"
+        subject+="/CN=$CNAME"
     fi
     if [ $EMAIL ]; then
         subject+="/emailAddress=$EMAIL"
@@ -91,42 +90,45 @@ function get_subject() {
 function management_certificate() {
     echo "Generating the management certificate for Azure"
     
-    local subject=$(get_subject)
-    if [ ! subject ]; then
+    local subject
+    subject=$(get_subject)
+    if [ ! "$subject" ]; then
         echo "Failed to generate the management certificate."
-        return -1
+        return 1
     fi
 
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-        -keyout /home/vagrant/.ssh/managementCert.pem \
-        -out /home/vagrant/.ssh/managementCert.pem \
+        -keyout "$CERT_DIR/$MANAGEMENT_PEM" \
+        -out "$CERT_DIR/$MANAGEMENT_CER" \
         -subj "$subject" &> /dev/null
     openssl x509 -outform der \
-        -in /home/vagrant/.ssh/managementCert.pem \
-        -out /home/vagrant/.ssh/managementCert.cer > /dev/null
+        -in "$CERT_DIR/$MANAGEMENT_PEM" \
+        -out "$CERT_DIR/$MANAGEMENT_CER" > /dev/null
 }
 
 function client_ssh_keys() {
     echo "Generating the client ssh keys."
 
-    local subject=$(get_subject)
-    if [ ! subject ]; then
+    local subject
+    subject=$(get_subject)
+    if [ ! "$subject" ]; then
         echo "Failed to generate the management certificate."
-        return -1
+        return 1
     fi
 
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout ~/.ssh/azureClient.key \
-        -out ~/.ssh/azureClient.pem \
+        -out "$CERT_DIR/$CLIENT_PEM" \
         -subj "$subject" &> /dev/null
     openssl rsa \
-        -in ~/.ssh/azureClient.key \
-        -out ~/.ssh/azureClientRSA.key &> /dev/null
+        -in "$CERT_DIR/$CLIENT_KEY" \
+        -out "$CERT_DIR/$CLIENT_RSA_KEY" &> /dev/null
 }
 
 function create_config(){
     echo "Creating elasticluster config"
-    local template="#Elasticluster - Azure experimental
+    local template
+    template="#Elasticluster - Azure experimental
 [cloud/azure-cloud]
 provider=azure
 subscription_id=$SUBSCRIPTION
