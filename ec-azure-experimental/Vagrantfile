@@ -17,9 +17,9 @@ Vagrant.configure(api_version) do |config|
         setup.privileged = true
     end
 
-    config.vm.provision "shell" do |config|
-        config.path = "provision/ec-setup.sh"
-        config.privileged = false
+    config.vm.provision "shell" do |setup|
+        setup.path = "provision/ec-setup.sh"
+        setup.privileged = false
     end
 
     config.vm.provider :virtualbox do |virtualbox|
