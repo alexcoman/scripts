@@ -4,7 +4,8 @@ box         = 'ubuntu/trusty64'
 url         = 'https://vagrantcloud.com/ubuntu/boxes/trusty64'
 hostname    = 'bcbio-azure'
 ip          = '192.168.50.11'
-ram         = '2048'
+ram         = '4096'
+cpus        = 4
 
 Vagrant.configure(api_version) do |config|
     config.vm.define "bcbio-azure" do |bcbio_azure|
@@ -18,6 +19,7 @@ Vagrant.configure(api_version) do |config|
     config.vm.provider :virtualbox do |virtualbox|
         virtualbox.name = hostname
         virtualbox.memory = ram
+        virtualbox.cpus = cpus
         virtualbox.customize ['modifyvm', :id, '--name', hostname]
     end
 
