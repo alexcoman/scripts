@@ -23,8 +23,13 @@ function pip_cache() {
 function install_bcbio() {
 	cd
 	if [ -d "$BCBIOVM_PATH" ]; then
-		echo "Removing the old version of bcbio-nextgen-vm."
-		sudo pip uninstall bcbiovm
+		if sudo pip freeze | grep bcbio-nextgen-vm
+		then
+			echo "Reinstall python-setuptools"
+			sudo apt-get install python-setuptools &> /dev/null
+			echo "Removing the old version of bcbio-nextgen-vm."
+			sudo pip uninstall --yes bcbio-nextgen-vm &> /dev/null
+		fi
 		sudo rm -rf bcbio-nextgen-vm &> /dev/null
 	fi
 	echo "Cloning the bcbio-nextgen-vm project."
@@ -34,21 +39,33 @@ function install_bcbio() {
 	echo "Installing bcbio-nextgen-vm requirements."
 	sudo pip install -r requirements.txt --upgrade --cache-dir "$PIP_CACHE" &> /dev/null
 	echo "Installing pybedtools in order to avoid MemoryError."
-	sudo pip install pybedtools>=0.6.8 &> /dev/null
+	sudo pip install "pybedtools>=0.6.8" &> /dev/null
 	echo "Installing the bcbio-nextgen-vm project."
 	sudo python setup.py install &> /dev/null
 }
 
 function install_ansible() {
-	echo "Remove the current version of ansible."
-	sudo pip uninstall ansible &> /dev/null
+	pip_packages=$(sudo pip freeze)
+	if grep -q azure-ansible <<<$pip_packages; then
+		echo "Remove the current version of azure-ansible."
+		sudo pip uninstall --yes azure-ansible &> /dev/null
+	elif grep -q ansible <<<"$pip_packages"; then
+		echo "Remove the current version of ansible."
+		sudo pip uninstall --yes ansible &> /dev/null
+	fi
 	echo "Install azure-ansible."
 	sudo pip install --pre azure-ansible &> /dev/null
 }
 
 function install_elasticluster() {
-	echo "Remove the current version of elasticluster."
-	sudo pip uninstall elasticluster &> /dev/null
+	pip_packages=$(sudo pip freeze)
+	if grep -q azure-elasticluster <<<$pip_packages; then
+		echo "Remove the current version of elasticluster."
+		sudo pip uninstall --yes azure-elasticluster &> /dev/null
+	elif grep -q elasticluster <<<"$pip_packages"; then
+		echo "Remove the current version of elasticluster."
+		sudo pip uninstall --yes elasticluster &> /dev/null
+	fi
 	echo "Install azure-elasticluster."
 	sudo pip install --pre azure-elasticluster &> /dev/null
 }
