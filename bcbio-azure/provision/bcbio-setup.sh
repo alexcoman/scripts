@@ -104,6 +104,18 @@ function ssh_keys() {
 	fi
 }
 
+function elasticluster_config() {
+	if [ -f "$SHARE_DIR/azure.config" ]; then
+		echo "Use the elasticluster config file from $SHARE_DIR"
+		cp "$SHARE_DIR/azure.config" "$EC_CONFIG"
+	else
+		echo "Write the elasticluster config file."
+		bcbio_vm.py azure prepare ec-config --econfig "$EC_CONFIG" &> /dev/null
+		echo "Copy the elasticluster config file to $SHARE_DIR"
+		cp "$EC_CONFIG" "$SHARE_DIR/azure.config"
+	fi
+}
+
 load_config
 pip_cache
 install_bcbio
@@ -111,3 +123,4 @@ install_ansible
 install_elasticluster
 management_cert
 ssh_keys
+elasticluster_config
