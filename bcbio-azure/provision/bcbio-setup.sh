@@ -116,6 +116,13 @@ function elasticluster_config() {
 	fi
 }
 
+function ssh_permissions() {
+	chmod 700 "$HOME/.ssh/"
+	cd "$HOME/.ssh/"
+	chmod 600 "managementCert.pem"
+	chmod 644 "managementCert.key"
+}
+
 load_config
 pip_cache
 install_bcbio
@@ -123,4 +130,5 @@ install_ansible
 install_elasticluster
 management_cert
 ssh_keys
+ssh_permissions
 elasticluster_config
