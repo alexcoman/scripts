@@ -46,7 +46,7 @@ function install_bcbio() {
 
 function install_ansible() {
 	pip_packages=$(sudo pip freeze)
-	if grep -q azure-ansible <<<$pip_packages; then
+	if grep -q azure-ansible <<<"$pip_packages"; then
 		echo "Remove the current version of azure-ansible."
 		sudo pip uninstall --yes azure-ansible &> /dev/null
 	elif grep -q ansible <<<"$pip_packages"; then
@@ -59,7 +59,7 @@ function install_ansible() {
 
 function install_elasticluster() {
 	pip_packages=$(sudo pip freeze)
-	if grep -q azure-elasticluster <<<$pip_packages; then
+	if grep -q azure-elasticluster <<<"$pip_packages"; then
 		echo "Remove the current version of elasticluster."
 		sudo pip uninstall --yes azure-elasticluster &> /dev/null
 	elif grep -q elasticluster <<<"$pip_packages"; then
@@ -70,9 +70,44 @@ function install_elasticluster() {
 	sudo pip install --pre azure-elasticluster &> /dev/null
 }
 
+function management_cert() {
+	generate_cert=false;
+	if [ ! -d "$SHARE_DIR" ]; then
+		mkdir -p "$SHARE_DIR"
+	fi
+
+	for file in "managementCert.cer" "managementCert.pem"
+	do
+		if [ -f "$SHARE_DIR/$file" ]; then
+			echo "Copy $file from $SHARE_DIR."
+			cp "$SHARE_DIR/$file" "$HOME/.ssh/$file"
+		else
+			generate_cert=true;
+		fi
+	done
+
+	if $generate_cert; then
+		echo "Generate new management certificate."
+		bcbio_vm.py azure prepare management-cert &> /dev/null
+		for file in "managementCert.cer" "managementCert.pem"
+		do
+			echo "Copy $file to $SHARE_DIR."
+			cp "$HOME/.ssh/$file" "$SHARE_DIR/$file"
+		done
+	fi
+}
+
+function ssh_keys() {
+	if [ ! -f ~/.ssh/managementCert.key ]; then
+		echo "Generate new SSH keys."
+		bcbio_vm.py azure prepare pkey &> /dev/null
+	fi
+}
 
 load_config
 pip_cache
 install_bcbio
 install_ansible
 install_elasticluster
+management_cert
+ssh_keys
