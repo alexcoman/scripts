@@ -21,12 +21,12 @@ function pip_cache() {
 }
 
 function install_bcbio() {
+	echo "Reinstall python-setuptools"
+	sudo apt-get install -y python-setuptools &> /dev/null
 	cd
 	if [ -d "$BCBIOVM_PATH" ]; then
 		if sudo pip freeze | grep bcbio-nextgen-vm
 		then
-			echo "Reinstall python-setuptools"
-			sudo apt-get install python-setuptools &> /dev/null
 			echo "Removing the old version of bcbio-nextgen-vm."
 			sudo pip uninstall --yes bcbio-nextgen-vm &> /dev/null
 		fi
@@ -46,7 +46,7 @@ function install_bcbio() {
 
 function install_ansible() {
 	pip_packages=$(sudo pip freeze)
-	if grep -q azure-ansible <<<"$pip_packages"; then
+	if grep -q "azure-ansible" <<<"$pip_packages"; then
 		echo "Remove the current version of azure-ansible."
 		sudo pip uninstall --yes azure-ansible &> /dev/null
 	elif grep -q ansible <<<"$pip_packages"; then
@@ -105,6 +105,12 @@ function ssh_keys() {
 }
 
 function elasticluster_config() {
+	ec_dirname="$(dirname $EC_CONFIG)"
+	if [ ! -d "$ec_dirname" ]; then
+		echo "Create $ec_dirname directory"
+		mkdir -p "$ec_dirname"
+	fi
+
 	if [ -f "$SHARE_DIR/azure.config" ]; then
 		echo "Use the elasticluster config file from $SHARE_DIR"
 		cp "$SHARE_DIR/azure.config" "$EC_CONFIG"
