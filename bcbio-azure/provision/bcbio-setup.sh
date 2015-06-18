@@ -44,19 +44,6 @@ function install_bcbio() {
 	sudo python setup.py install &> /dev/null
 }
 
-function install_ansible() {
-	pip_packages=$(sudo pip freeze)
-	if grep -q "azure-ansible" <<<"$pip_packages"; then
-		echo "Remove the current version of azure-ansible."
-		sudo pip uninstall --yes azure-ansible &> /dev/null
-	elif grep -q ansible <<<"$pip_packages"; then
-		echo "Remove the current version of ansible."
-		sudo pip uninstall --yes ansible &> /dev/null
-	fi
-	echo "Install azure-ansible."
-	sudo pip install --pre azure-ansible &> /dev/null
-}
-
 function install_elasticluster() {
 	pip_packages=$(sudo pip freeze)
 	if grep -q azure-elasticluster <<<"$pip_packages"; then
@@ -132,7 +119,6 @@ function ssh_permissions() {
 load_config
 pip_cache
 install_bcbio
-install_ansible
 install_elasticluster
 management_cert
 ssh_keys
