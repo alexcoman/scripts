@@ -127,6 +127,16 @@ function elasticluster_config() {
 	fi
 }
 
+function enforce_ansible_version() {
+	echo "Enforce ansible version 1.7.2"
+	pip_packages=$(sudo pip freeze)
+	if grep -q ansible <<<"$pip_packages"; then
+		echo "Remove the current version of ansible."
+		sudo pip uninstall --yes ansible &> /dev/null
+	fi
+	sudo pip install --no-use-wheel ansible==1.7.2 &> /dev/null
+}
+
 function ssh_permissions() {
 	chmod 700 "$HOME/.ssh/"
 	cd "$HOME/.ssh/"
@@ -138,6 +148,7 @@ load_config
 pip_cache
 install_bcbio
 install_elasticluster
+enforce_ansible_version
 management_cert
 ssh_keys
 ssh_permissions
