@@ -137,11 +137,19 @@ function enforce_ansible_version() {
 	sudo pip install --no-use-wheel ansible==1.7.2 &> /dev/null
 }
 
-function ssh_permissions() {
+function update_permissions() {
+	echo "Change permisions for ~/.ssh directory."
 	chmod 700 "$HOME/.ssh/"
-	cd "$HOME/.ssh/"
-	chmod 600 "managementCert.pem"
-	chmod 644 "managementCert.key"
+
+	echo "Change permisions for managementCert"
+	chmod 600 "$HOME/.ssh/managementCert.pem"
+	chmod 644 "$HOME/.ssh/managementCert.key"
+
+	if [ ! -d "$HOME/.ansible/cp" ]; then
+		mkdir -p "$HOME/.ansible/cp"
+	fi
+	echo "Change permisions for ~/.ansible"
+	chmod --recursive 755 "$HOME/.ansible"
 }
 
 load_config
@@ -151,5 +159,5 @@ install_elasticluster
 enforce_ansible_version
 management_cert
 ssh_keys
-ssh_permissions
+update_permissions
 elasticluster_config
