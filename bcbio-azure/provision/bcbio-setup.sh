@@ -143,7 +143,7 @@ function update_permissions() {
 
     echo "Change permisions for managementCert"
     chmod 600 "$HOME/.ssh/managementCert.pem"
-    chmod 644 "$HOME/.ssh/managementCert.key"
+    chmod 600 "$HOME/.ssh/managementCert.key"
 
     if [ ! -d "$HOME/.ansible/cp" ]; then
         mkdir -p "$HOME/.ansible/cp"
