@@ -24,6 +24,11 @@ Vagrant.configure(api_version) do |config|
     end
 
     config.vm.provision "shell" do |setup|
+        setup.path = "provision/prologue.sh"
+        setup.privileged = false
+    end
+
+    config.vm.provision "shell" do |setup|
         setup.path = "provision/vagrant.sh"
         setup.privileged = true
     end
