@@ -58,8 +58,8 @@ function install_elasticluster() {
         echo "Remove the current version of elasticluster."
         sudo pip uninstall --yes elasticluster &> /dev/null
     fi
-    echo "Install azure-elasticluster."
-    sudo pip install --pre azure-elasticluster &> /dev/null
+    echo "Install the bcbio version of elasticluster."
+    sudo pip install git+https://github.com/chapmanb/elasticluster@bcbio &> /dev/null
 }
 
 function management_cert() {
