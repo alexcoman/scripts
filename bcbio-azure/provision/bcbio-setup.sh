@@ -36,14 +36,15 @@ function install_bcbio() {
     git clone -b "$BCBIOVM_BRANCH" "$BCBIOVM_REPO" &> /dev/null
 
     cd "$BCBIOVM_PATH"
-    echo "Replace the elasticluster version from requirements.txt"
-    sed -i -e "s/git+git:\/\/github.com\/chapmanb\/elasticluster.git@bcbio/azure-elasticluster/g" requirements.txt
 
     echo "Installing bcbio-nextgen-vm requirements."
     sudo pip install -r requirements.txt --upgrade --cache-dir "$PIP_CACHE" &> /dev/null
 
     echo "Installing pybedtools in order to avoid MemoryError."
     sudo pip install "pybedtools>=0.6.8" &> /dev/null
+
+    echo "Installing the bcbio-nextgen project"
+    sudo pip install git+https://github.com/chapmanb/bcbio-nextgen@master &> /dev/null
 
     echo "Installing the bcbio-nextgen-vm project."
     sudo python setup.py install &> /dev/null
