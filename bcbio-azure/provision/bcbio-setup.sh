@@ -55,7 +55,8 @@ function install_elasticluster() {
     if grep -q azure-elasticluster <<<"$pip_packages"; then
         echo "Remove the current version of elasticluster."
         sudo pip uninstall --yes azure-elasticluster &> /dev/null
-    elif grep -q elasticluster <<<"$pip_packages"; then
+    fi
+    if grep -q elasticluster <<<"$pip_packages"; then
         echo "Remove the current version of elasticluster."
         sudo pip uninstall --yes elasticluster &> /dev/null
     fi
