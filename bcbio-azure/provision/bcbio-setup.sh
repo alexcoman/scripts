@@ -111,14 +111,14 @@ function elasticluster_config() {
             local_file=$(md5sum "$EC_CONFIG" | cut -f 1 -d " ")
             if [ ! "$share_file" = "$local_file" ]; then
                 echo "Make a copy of the current elasticluster config."
-                cp -i "$EC_CONFIG" "$EC_CONFIG.backup"
-                cp -i "$SHARE_DIR/azure.config" "$EC_CONFIG"
+                cp "$EC_CONFIG" "$EC_CONFIG.backup"
+                cp "$SHARE_DIR/azure.config" "$EC_CONFIG"
             else
                 echo "Vagrant is using the last version of elasticluster config."
             fi
         else
             echo "Use the elasticluster config file from $SHARE_DIR"
-            cp -i "$SHARE_DIR/azure.config" "$EC_CONFIG"
+            cp "$SHARE_DIR/azure.config" "$EC_CONFIG"
         fi
     else
         echo "Write the elasticluster config file."
