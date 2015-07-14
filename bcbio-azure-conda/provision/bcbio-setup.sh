@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-export PATH="$HOME/miniconda/bin:$PATH"
 
 function load_config() {
     CONFIG_PATH='/vagrant/provision/default.conf'
