@@ -26,4 +26,4 @@ conda update --yes conda
 
 echo "Installing additional conda packages."
 conda install --yes --quiet jinja2 toolz binstar &> /dev/null
-conda install --yes --quiet pep8 pylint	& /dev/null
+conda install --yes --quiet pep8 pylint	&> /dev/null
