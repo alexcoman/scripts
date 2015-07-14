@@ -6,9 +6,9 @@ sudo apt-get update -y &> /dev/null
 sudo apt-get upgrade -y &> /dev/null
 
 echo "Installing required packages."
-sudo apt-get install git &> /dev/null
-sudo apt-get install libatlas-dev libatlas-base-dev &> /dev/null
-sudo apt-get install liblapack-dev gfortran &> /dev/null
+sudo apt-get install -y git &> /dev/null
+sudo apt-get install -y libatlas-dev libatlas-base-dev &> /dev/null
+sudo apt-get install -y liblapack-dev gfortran &> /dev/null
 
 echo "Installing azure client."
 sudo apt-get install -y nodejs-legacy npm &> /dev/null
@@ -25,5 +25,5 @@ echo "Updating conda"
 conda update --yes conda
 
 echo "Installing additional conda packages."
-conda install --yes --quiet jinja2 toolz
-conda install --yes --quiet pep8 pylint
+conda install --yes --quiet jinja2 toolz binstar &> /dev/null
+conda install --yes --quiet pep8 pylint	& /dev/null
