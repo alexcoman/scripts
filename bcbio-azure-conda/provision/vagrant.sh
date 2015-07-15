@@ -19,9 +19,7 @@ cd $HOME
 wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
 chmod +x miniconda.sh
 bash miniconda.sh -b -p "$HOME/miniconda"
-
-echo "export PATH=$HOME/miniconda/bin:$PATH" >> "$HOME/.bashrc"
-export PATH="$HOME/miniconda/bin:$PATH"
+PATH="$HOME/miniconda/bin:$PATH"
 
 echo "Updating conda"
 conda update --yes conda
@@ -29,3 +27,7 @@ conda update --yes conda
 echo "Installing additional conda packages."
 conda install --yes --quiet jinja2 toolz binstar &> /dev/null
 conda install --yes --quiet pep8 pylint	&> /dev/null
+
+echo "Adding conda channels"
+conda config --add channels https://conda.binstar.org/bcbio
+conda config --add channels https://conda.binstar.org/bcbio-dev

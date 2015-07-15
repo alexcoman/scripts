@@ -18,10 +18,8 @@ function load_config() {
 
 function install_bcbio() {
     echo "Installing bcbio-nextgen-vm"
-    conda config --add channels https://conda.binstar.org/bcbio
-    conda config --add channels https://conda.binstar.org/bcbio-dev
-    conda install -c https://conda.binstar.org/bcbio-dev/channel/linux-64 bcbio-nextgen
-    conda install -c https://conda.binstar.org/bcbio-dev/channel/linux-64 bcbio-nextgen-vm
+    conda install --yes -c https://conda.binstar.org/bcbio-dev/channel/linux-64 bcbio-nextgen &> /dev/null
+    conda install --yes -c https://conda.binstar.org/bcbio-dev/channel/linux-64 bcbio-nextgen-vm &> /dev/null
 }
 
 function management_cert() {
