@@ -22,7 +22,7 @@ bash miniconda.sh -b -p "$HOME/miniconda"
 PATH="$HOME/miniconda/bin:$PATH"
 
 echo "Updating conda"
-conda update --yes conda
+conda update --yes --quiet conda &> /dev/null
 
 echo "Installing additional conda packages."
 conda install --yes --quiet jinja2 toolz binstar &> /dev/null
