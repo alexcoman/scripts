@@ -29,5 +29,4 @@ conda install --yes --quiet jinja2 toolz binstar &> /dev/null
 conda install --yes --quiet pep8 pylint	&> /dev/null
 
 echo "Adding conda channels"
-conda config --add channels https://conda.binstar.org/bcbio
 conda config --add channels https://conda.binstar.org/bcbio-dev
