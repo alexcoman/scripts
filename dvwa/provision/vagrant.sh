@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-mkdir -p /vagrant/log
+mkdir -p /vagrant/.log
 adduser vagrant www-data
 export DEBIAN_FRONTEND=noninteractive
 
@@ -68,15 +68,7 @@ pm.status_path = /gitium/fpm-status
 ping.path = /gitium/fpm-ping
 env[ENV] = vagrant
 
-access.log = /vagrant/log/php-access.log
+access.log = /vagrant/.log/php-access.log
 access.format = "%R - %u %t \"%m %r%Q%q\" %s %f %{mili}d %{kilo}M %C%%"
 EOF
 cp /vagrant/provision/php.ini /etc/php5/fpm/php.ini
-
-echo "Creating 'dvwa' database"
-echo 'create database if not exists `dvwa`' | mysql
-
-service nginx restart
-service php5-fpm restart
-
-ufw allow 80

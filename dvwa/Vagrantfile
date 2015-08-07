@@ -1,7 +1,6 @@
 api_version = '2'
 provider    = 'virtualbox'
-box         = 'ubuntu/trusty64'
-url         = 'https://vagrantcloud.com/ubuntu/boxes/trusty64'
+box         = 'hashicorp/precise64'
 hostname    = 'dvwa'
 ip          = '192.168.50.12'
 ram         = '2048'
@@ -12,7 +11,6 @@ Vagrant.configure(api_version) do |config|
     end
 
     config.vm.box = box
-    config.vm.box_url = url
     config.vm.host_name = hostname
     config.vm.network :private_network, ip: ip
     
@@ -26,6 +24,11 @@ Vagrant.configure(api_version) do |config|
     config.vm.provision "shell" do |setup|
         setup.path = "provision/vagrant.sh"
         setup.privileged = true
+    end
+
+    config.vm.provision "shell" do |setup|
+        setup.path = "provision/dvwa.sh"
+        setup.privileged = false
     end
 
 end
