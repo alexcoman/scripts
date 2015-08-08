@@ -12,7 +12,7 @@ cat <<EOF > /etc/apt/sources.list.d/php5-oldstable.list
 deb http://ppa.launchpad.net/ondrej/php5-oldstable/ubuntu precise main
 deb-src http://ppa.launchpad.net/ondrej/php5-oldstable/ubuntu precise main
 EOF
-apt-key adv -q --keyserver keyserver.ubuntu.com --recv-keys 4F4EA0AAE5267A6C 2>&1 > /dev/null
+apt-key adv -q --keyserver keyserver.ubuntu.com --recv-keys 4F4EA0AAE5267A6C &> /dev/null
 
 cat <<EOF > /etc/apt/sources.list.d/nginx.list
 deb http://nginx.org/packages/ubuntu/ precise nginx
