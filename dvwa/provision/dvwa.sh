@@ -43,7 +43,7 @@ sudo service php5-fpm restart
 echo "Done."
 
 echo "Creating database..."
-wget --post-data "create_db=Create / Reset Database" http://127.0.0.1/setup.php >> /dev/null 2>&1
+curl -X POST http://127.0.0.1/setup.php -d "create_db=Create / Reset Database" >> /dev/null 2>&1
 echo "Done!"
 
 sudo ufw allow 80
