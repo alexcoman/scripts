@@ -2,3 +2,4 @@
 .pip-cache
 .shared
 .log
+.www

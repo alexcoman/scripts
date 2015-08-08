@@ -2,6 +2,8 @@
 set -e
 
 mkdir -p /vagrant/.log
+mkdir -p /vagrant/.www
+
 adduser vagrant www-data
 export DEBIAN_FRONTEND=noninteractive
 
@@ -45,6 +47,7 @@ apt-get update -y &> /dev/null
 echo "Installing system pacakges"
 apt-get -o Dpkg::Options::="--force-confold" install -qy nginx php5-fpm php5-gd php5-curl php5-xdebug php5-mysql php5-cli php5-dev php-pear mysql-server-5.5 build-essential avahi-daemon > /dev/null
 apt-get -o Dpkg::Options::="--force-confold" install -qy phpmyadmin > /dev/null
+apt-get install -qy unzip
 
 echo "Configuring system"
 rm -rf /etc/nginx
