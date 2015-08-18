@@ -18,7 +18,7 @@ sudo npm install -gq azure-cli &> /dev/null
 echo "Done."
 
 echo "Installing miniconda"
-cd $HOME
+cd "$HOME"
 wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh &> /dev/null
 chmod +x miniconda.sh
 bash miniconda.sh -b -p "$HOME/miniconda" &> /dev/null
@@ -36,9 +36,4 @@ echo "Done."
 echo "Installing additional conda packages."
 conda install --yes --quiet jinja2 toolz binstar &> /dev/null
 conda install --yes --quiet pep8 pylint	&> /dev/null
-echo "Done."
-
-echo "Adding conda channels"
-conda config --add channels "$DEV_CHANNEL" &> /dev/null
-conda config --add channels "$STABLE_CHANNEL" &> /dev/null
 echo "Done."

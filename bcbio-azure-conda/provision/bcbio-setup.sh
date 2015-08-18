@@ -15,12 +15,21 @@ function load_config() {
     source "${CONFIG_PATH}"
 }
 
+function add_channels() {
+    echo "Adding conda channels..."
+    conda config --add channels "$DEV_CHANNEL"
+    conda config --add channels "$STABLE_CHANNEL"
+    echo "Done."
+}
 
 function install_bcbio() {
-    echo "Installing bcbio-nextgen-vm"
+    echo "Installing bcbio-nextgen..."
     conda install --yes --quiet --channel "$DEV_CHANNEL" bcbio-nextgen &> /dev/null
+    echo "Done."
+
+    echo "Installing bcbio-nextgen-vm..."
     conda install --yes --quiet --channel "$DEV_CHANNEL" bcbio-nextgen-vm &> /dev/null
-    echo "Done"
+    echo "Done."
 }
 
 function management_cert() {
@@ -60,7 +69,7 @@ function ssh_keys() {
 function elasticluster_config() {
     ec_dirname="$(dirname $EC_CONFIG)"
     if [ ! -d "$ec_dirname" ]; then
-        echo "Create $ec_dirname directory"
+        echo "Creating '$ec_dirname' directory ..."
         mkdir -p "$ec_dirname"
     fi
 
@@ -89,21 +98,26 @@ function elasticluster_config() {
 }
 
 function update_permissions() {
-    echo "Change permisions for ~/.ssh directory."
+    echo "Changing permisions for '~/.ssh' directory ..."
     chmod 700 "$HOME/.ssh/"
+    echo "Done."
 
-    echo "Change permisions for managementCert"
+    echo "Changing permisions for 'managementCert' ..."
     chmod 600 "$HOME/.ssh/managementCert.pem"
     chmod 600 "$HOME/.ssh/managementCert.key"
+    echo "Done."
 
     if [ ! -d "$HOME/.ansible/cp" ]; then
         mkdir -p "$HOME/.ansible/cp"
     fi
-    echo "Change permisions for ~/.ansible"
+
+    echo "Changing permisions for '~/.ansible' ..."
     chmod --recursive 755 "$HOME/.ansible"
+    echo "Done."
 }
 
 load_config
+add_channels
 install_bcbio
 management_cert
 ssh_keys
