@@ -23,12 +23,16 @@ function add_channels() {
 }
 
 function install_bcbio() {
+    echo "Installing elasticluster"
+    conda install --yes --quiet --channel "$DEV_CHANNEL" elasticluster --force &> /dev/null
+    echo "Done"
+
     echo "Installing bcbio-nextgen..."
-    conda install --yes --quiet --channel "$DEV_CHANNEL" bcbio-nextgen &> /dev/null
+    conda install --yes --quiet --channel "$DEV_CHANNEL" bcbio-nextgen --force &> /dev/null
     echo "Done."
 
     echo "Installing bcbio-nextgen-vm..."
-    conda install --yes --quiet --channel "$DEV_CHANNEL" bcbio-nextgen-vm &> /dev/null
+    conda install --yes --quiet --channel "$DEV_CHANNEL" bcbio-nextgen-vm --force &> /dev/null
     echo "Done."
 }
 
