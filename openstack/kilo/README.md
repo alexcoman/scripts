@@ -375,12 +375,12 @@ More information regarding Openstack default ports can be found on [Appendix A. 
 ###OpenStack role list raises unrecognized arguments: --group
 
 ```bash
-::./stack.sh:780+openstack role list --group 3c65c1a8d12f40a2a9949d5b2922beae --project 18ab3a46314442b183db43bc13b175b4 --column ID --column Name
+::./stack.sh:780+openstack role list --group $GROUP_ID --project $PROJECT_ID --column ID --column Name
 usage: openstack role list [-h] [-f {csv,html,json,table,yaml}] [-c COLUMN]
                            [--max-width <integer>]
                            [--quote {all,minimal,none,nonnumeric}]
                            [--project <project>] [--user <user>]
-openstack role list: error: unrecognized arguments: --group 3c65c1a8d12f40a2a9949d5b2922beae
+openstack role list: error: unrecognized arguments: --group $GROUP_ID
 ```
 
 Code location at `lib/keystone:418`, invoked by `functions-common:773`.
