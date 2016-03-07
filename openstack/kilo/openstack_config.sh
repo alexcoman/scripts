@@ -18,7 +18,7 @@ function delete_openstack_networks() {
     neutron net-delete private
 
     # Delete the public network
-    neutron net-delete public   
+    neutron net-delete public
 }
 
 function create_openstack_networks() {
@@ -27,26 +27,30 @@ function create_openstack_networks() {
     # ############################ #
 
     # Create the private network
-    NETID1=$(neutron net-create private --provider:network_type flat --provider:physical_network physnet1 | awk '{if (NR == 6) {print $4}}');
-    echo "[i] Private network id: $NETID1";
-    
+    NET_ID=$(neutron net-create private --provider:network_type flat --provider:physical_network physnet1 | awk '{if (NR == 6) {print $4}}');
+    echo "[i] Private network id: $NET_ID";
+
     # Creathe the private subnetwork
-    SUBNETID1=$(neutron subnet-create private 10.100.0.0/24 --gateway 10.100.0.2 --dns_nameservers list=true 8.8.8.8 | awk '{if (NR == 11) {print $4}}');
-    
+    SUBNET_ID=$(neutron subnet-create private 10.100.0.0/24 --gateway 10.100.0.2 --dns_nameservers list=true 8.8.8.8 | awk '{if (NR == 12) {print $4}}');
+    echo "[i] Private sub-network id: $SUBNET_ID";
+
     # Create the router
-    ROUTERID1=$(neutron router-create router1 | awk '{if (NR == 9) {print $4}}');
-    
+    ROUTER_ID=$(neutron router-create router1 | awk '{if (NR == 9) {print $4}}');
+    echo "[i] Router id: $ROUTER_ID";
+
     # Attach the private subnetwork to the router
-    neutron router-interface-add $ROUTERID1 $SUBNETID1
-    
+    neutron router-interface-add $ROUTER_ID $SUBNET_ID
+
     # Create the public network
-    EXTNETID1=$(neutron net-create public --router:external | awk '{if (NR == 6) {print $4}}');
-    
+    EXTNET_ID=$(neutron net-create public --router:external | awk '{if (NR == 6) {print $4}}');
+    echo "[i] Public sub-network id: $EXTNET_ID";
+
     # Create the public subnetwork
-    neutron subnet-create public --allocation-pool start=10.0.2.66,end=10.0.2.126 --gateway 10.0.2.65 10.0.2.64/26 --disable-dhcp    
-    
+    SUBNET_ID=$(neutron subnet-create public 10.0.2.0/24 --gateway 10.0.2.65 --allocation-pool start=10.0.2.66,end=10.0.2.126 --disable-dhcp);
+    echo "[i] Public sub-network id: $SUBNET_ID";
+
     # Attach the public network to the router
-    neutron router-gateway-set $ROUTERID1 $EXTNETID1
+    neutron router-gateway-set $ROUTER_ID $EXTNET_ID
 }
 
 function security_groups() {
@@ -56,8 +60,10 @@ function security_groups() {
 
     # Enable ping
     nova secgroup-add-rule default ICMP 8 8 0.0.0.0/0
+
     # Enable SSH
     nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
+
     # Enable RDP
     nova secgroup-add-rule default tcp 3389 3389 0.0.0.0/0
 }
