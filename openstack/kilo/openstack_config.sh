@@ -31,7 +31,7 @@ function create_openstack_networks() {
     echo "[i] Private network id: $NETID1";
     
     # Creathe the private subnetwork
-    SUBNETID1=$(neutron subnet-create private 10.0.1.0/24 --dns_nameservers list=true 8.8.8.8 | awk '{if (NR == 11) {print $4}}');
+    SUBNETID1=$(neutron subnet-create private 10.100.0.0/24 --gateway 10.100.0.2 --dns_nameservers list=true 8.8.8.8 | awk '{if (NR == 11) {print $4}}');
     
     # Create the router
     ROUTERID1=$(neutron router-create router1 | awk '{if (NR == 9) {print $4}}');
@@ -43,7 +43,7 @@ function create_openstack_networks() {
     EXTNETID1=$(neutron net-create public --router:external | awk '{if (NR == 6) {print $4}}');
     
     # Create the public subnetwork
-    neutron subnet-create public --allocation-pool start=10.0.2.100,end=10.0.2.120 --gateway 10.0.2.3 10.0.2.0/24 --disable-dhcp    
+    neutron subnet-create public --allocation-pool start=10.0.2.66,end=10.0.2.126 --gateway 10.0.2.65 10.0.2.64/26 --disable-dhcp    
     
     # Attach the public network to the router
     neutron router-gateway-set $ROUTERID1 $EXTNETID1
