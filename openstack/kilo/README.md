@@ -402,36 +402,10 @@ The next step, since keystone v2.0 doesn't even have the concept "group", you ne
 
 ```diff
 diff --git a/functions-common b/functions-common
-index c27e623..d6c8f74 100644
+index c27e623..c7f8ee3 100644
 --- a/functions-common
 +++ b/functions-common
-@@ -757,6 +757,7 @@ function get_or_create_role {
- # Gets or adds user role to project
- # Usage: get_or_add_user_project_role <role> <user> <project>
- function get_or_add_user_project_role {
-+    local os_url="$KEYSTONE_SERVICE_URI_V3"
-     local user_role_id
-     # Gets user role id
-     user_role_id=$(openstack role list \
-@@ -764,6 +765,8 @@ function get_or_add_user_project_role {
-         --project $3 \
-         --column "ID" \
-         --column "Name" \
-+        --os-identity-api-version=3 \
-+        --os-url=$os_url \
-         | grep " $1 " | get_field 1)
-     if [[ -z "$user_role_id" ]]; then
-         # Adds role to user
-@@ -771,6 +774,8 @@ function get_or_add_user_project_role {
-             $1 \
-             --user $2 \
-             --project $3 \
-+            --os-identity-api-version=3 \
-+            --os-url=$os_url \
-             | grep " id " | get_field 2)
-     fi
-     echo $user_role_id
-@@ -779,6 +784,7 @@ function get_or_add_user_project_role {
+@@ -779,6 +779,7 @@ function get_or_add_user_project_role {
  # Gets or adds group role to project
  # Usage: get_or_add_group_project_role <role> <group> <project>
  function get_or_add_group_project_role {
@@ -439,7 +413,7 @@ index c27e623..d6c8f74 100644
      local group_role_id
      # Gets group role id
      group_role_id=$(openstack role list \
-@@ -786,6 +792,8 @@ function get_or_add_group_project_role {
+@@ -786,6 +787,8 @@ function get_or_add_group_project_role {
          --project $3 \
          --column "ID" \
          --column "Name" \
@@ -448,7 +422,7 @@ index c27e623..d6c8f74 100644
          | grep " $1 " | get_field 1)
      if [[ -z "$group_role_id" ]]; then
          # Adds role to group
-@@ -793,6 +801,8 @@ function get_or_add_group_project_role {
+@@ -793,6 +796,8 @@ function get_or_add_group_project_role {
              $1 \
              --group $2 \
              --project $3 \
@@ -457,10 +431,10 @@ index c27e623..d6c8f74 100644
              | grep " id " | get_field 2)
      fi
      echo $group_role_id
+
 ```
 
 ```bash
 # functions-common.diff contains the above diff
 ~ $ git apply functions-common.diff
-~ $ rm functions-common.diff
 ```
