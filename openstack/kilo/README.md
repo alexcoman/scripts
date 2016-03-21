@@ -91,17 +91,20 @@ iface eth2 inet manual
 
 ```bash
 # Restart the networking service
-~ $ sudo service networking restart
+~ $ sudo /etc/init.d/networking restart
 
 # Disable the firewall
 ~ $ sudo ufw disable
 
+# Bring eth1 up
+~ $ sudo ifup eth1
+
+# Bring eth2 up
+~$ sudo ifup eth2
+
 # Disable rx/tx vlan offloading
 ~ $ sudo ethtool -K eth1 txvlan off rxvlan off
 ```
-
-**Note**: If the above command fails a reboot will be required.
-
 
 ### Add OVS Bridges
 
@@ -157,13 +160,12 @@ HEAT_BRANCH=$DEVSTACK_BRANCH
 TROVE_BRANCH=$DEVSTACK_BRANCH
 HORIZON_BRANCH=$DEVSTACK_BRANCH
 TROVE_BRANCH=$DEVSTACK_BRANCH
+TEMPEST_BRANCH=$DEVSTACK_BRANCH
 REQUIREMENTS_BRANCH=$DEVSTACK_BRANCH
-
-IMAGE_URLS+=",https://people.debian.org/~aurel32/qemu/amd64/debian_wheezy_amd64_standard.qcow2"
 
 Q_PLUGIN=ml2
 Q_ML2_PLUGIN_MECHANISM_DRIVERS=openvswitch
-Q_ML2_TENANT_NETWORK_TYPE=vlan
+Q_ML2_TENANT_NETWORK_TYPE=flat, vlan
 
 PHYSICAL_NETWORK=physnet1
 OVS_PHYSICAL_BRIDGE=br-eth1
@@ -252,15 +254,21 @@ disable_service s-proxy
 disable_service s-object
 disable_service s-container
 disable_service s-account
+
+# Heat
 disable_service heat
 disable_service h-api
 disable_service h-api-cfn
 disable_service h-api-cw
 disable_service h-eng
+
+# Ceilometer
 disable_service ceilometer-acompute
 disable_service ceilometer-acentral
 disable_service ceilometer-collector
 disable_service ceilometer-api
+
+# Tempest
 disable_service tempest
 ```
 
