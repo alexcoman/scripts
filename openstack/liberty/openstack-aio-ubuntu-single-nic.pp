@@ -10,9 +10,9 @@ $interface = 'eth0'
 $ext_bridge_interface = 'br-ex'
 $dns_nameservers = ['8.8.8.8', '8.8.4.4']
 $private_subnet_cidr = '192.168.1.0/24'
-$public_subnet_cidr = '10.0.2.0/16'
-$public_subnet_gateway = '10.0.1.1'
-$public_subnet_allocation_pools = ['start=10.0.2.30,end=10.0.2.50']
+$public_subnet_cidr = '10.0.2.0/24'
+$public_subnet_gateway = '10.0.2.2'
+$public_subnet_allocation_pools = ['start=10.0.2.20,end=10.0.2.50']
 
 # Note: this is executed on the master
 $gateway = generate('/bin/sh',
