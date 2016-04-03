@@ -576,20 +576,10 @@ file_line { 'dashboard_default_role':
   line   => 'OPENSTACK_KEYSTONE_DEFAULT_ROLE = \'user\'',
   match  => '^OPENSTACK_KEYSTONE_DEFAULT_ROLE\s=.*',
 }
-->
-exec { 'get-openstack-dashboard-theme':
 
-  command => 'wget -q https://github.com/cloudbase/horizon-cloudbase/releases/\
-download/v1.1/openstack-dashboard-cloudbase-theme_1.1-1.deb -O \
-/tmp/openstack-dashboard-cloudbase-theme_1.1-1.deb',
-  unless  => [ 'test -f /tmp/openstack-dashboard-cloudbase-theme_1.1-1.deb' ],
-  path    => [ '/usr/bin/', '/bin' ],
-}
 ->
-package { 'openstack-dashboard-cloudbase-theme':
+package { 'openstack-dashboard-ubuntu-theme':
   ensure   => latest,
-  provider => dpkg,
-  source   => '/tmp/openstack-dashboard-cloudbase-theme_1.1-1.deb'
 }
 ~> Service['apache2']
 
