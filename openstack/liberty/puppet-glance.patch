@@ -1,0 +1,28 @@
+From 95ca08d4e7f33e97bbd456f6ba2864e114045905 Mon Sep 17 00:00:00 2001
+From: Dorin Paslaru <dpaslaru@cloudbasesolutions.com>
+Date: Sun, 29 Nov 2015 19:24:13 +0200
+Subject: [PATCH] Fix duplicate declaration issues
+
+Fixes https://bugs.launchpad.net/puppet-glance/+bug/1483663/comments/3
+---
+ manifests/init.pp | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 8ea4a75..1626f23 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -29,6 +29,11 @@ # == class: glance
+       tag    => ['openstack', 'glance-package'],
+     }
+   }
+-
+-  ensure_resource('package', 'python-openstackclient', {'ensure' => $package_ensure, tag => 'openstack'})
++  if $package_ensure == 'present' {
++  include '::openstacklib::openstackclient'
++    } else {
++  class { '::openstacklib::openstackclient':
++  package_ensure => $ensure,
++    }
++  }
+ }
