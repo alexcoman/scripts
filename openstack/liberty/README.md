@@ -56,9 +56,7 @@ sudo puppet module install saz/memcached
 **IMPORTANT:** There is a [bug][0] in puppet-glance module v. 7.0.0 released Nov 26th 2015 which needs a patch before running the puppet.
 
 ```bash
-cd /etc/puppet/modules/glance/
-sudo wget https://raw.githubusercontent.com/alexandrucoman/scripts/master/openstack/liberty/puppet-glance.patch
-sudo patch -p1 -b < 1.patch
+cd /etc/puppet/modules/glance/ && sudo wget https://patch-diff.githubusercontent.com/raw/thenoizz/puppet-glance/pull/1.patch && sudo patch -p1 -b < 1.patch && cd ~
 ```
 
 ### Manifest
