@@ -689,6 +689,7 @@ class { 'cinder::volume::iscsi':
   volume_group     => $cinder_lvm_vg,
 }
 
+
 ######## Keystone files to be sourced
 
 file { '/root/keystonerc_admin':
@@ -711,4 +712,107 @@ export OS_PASSWORD=${demo_password}
 export OS_TENANT_NAME=demo
 export OS_VOLUME_API_VERSION=2
 ",
+}
+
+####### Tempest
+
+class tempest(
+  $identity_host        = $local_ip,
+  $identity_port        = '35357',
+  $identity_api_version = 'v2.0',
+  
+  # non admin user
+  $username             = 'demo',
+  $password             = $demo_password,
+  $tenant_name          = $admin_tenant_name,
+  
+  # image information
+  $image_id             = 'CHANGE_ME',
+  $image_id_alt         = 'CHANGE_ME',
+  $flavor_ref           = 3,
+  $flavor_ref_alt       = 3,
+  
+  # the version of the openstack images api to use
+  $image_api_version    = '1',
+  $image_host           = $local_ip,
+  $image_port           = '9292',
+
+  # this should be the username of a user with administrative privileges
+  $admin_username       = $admin_password,
+  $admin_password       = $admin_password,
+  $admin_tenant_name    = $admin_tenant_name,
+
+  $nova_db_uri          = 'mysql://nova:nova_db_password@127.0.0.1/nova',
+
+  # testing features that are supported
+  $resize_available     = false,
+  $change_pw_available  = false,
+
+  $git_protocol         = 'git',
+  $image_name           = 'cirros',
+  $version_to_test      = 'master',
+  $image_source         = 'https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img'
+) {
+
+  include 'tempest::params'
+
+  if ! defined(Package['git']){
+    package {'git':
+      ensure => present,
+    }
+  }
+
+  if ! defined(Package['python-pip']){
+    package {'python-pip':
+      ensure => present,
+    }
+  }
+
+  if ! defined(Package[$tempest::params::python_dev]){
+    package {$tempest::params::python_dev:
+      ensure => present,
+    }
+  }
+
+  if ! defined(Package[$tempest::params::libxslt_dev]){
+    package {$tempest::params::libxslt_dev:
+      ensure => present,
+    }
+  }
+
+  if ! defined(Package[$tempest::params::libxml2_dev]){
+    package {$tempest::params::libxml2_dev:
+      ensure => present,
+    }
+  }
+
+  exec { '/usr/bin/pip-python install -U pip':
+    unless  => '/usr/bin/which pip',
+    require => Package['python-pip'],
+  }
+
+  vcsrepo { '/var/lib/tempest':
+    ensure   => 'present',
+    source   => "${git_protocol}://github.com/openstack/tempest.git",
+    revision => 'tags/7',
+    provider => 'git',
+    require  => Package['git'],
+  }
+
+  file { '/etc/tempest.conf':
+    content => template($template_path),
+    require => Vcsrepo['/var/lib/tempest'],
+  }
+
+  keystone_tenant { $tenant_name:
+    ensure      => present,
+    enabled     => 'True',
+    description => 'admin tenant',
+  }
+  keystone_user { $username:
+    ensure      => present,
+    enabled     => 'True',
+    tenant      => $tenant_name,
+    password    => $password,
+  }
 }
