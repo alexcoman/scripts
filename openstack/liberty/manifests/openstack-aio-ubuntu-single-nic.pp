@@ -689,6 +689,7 @@ class { 'cinder::volume::iscsi':
   volume_group     => $cinder_lvm_vg,
 }
 
+
 ######## Keystone files to be sourced
 
 file { '/root/keystonerc_admin':
