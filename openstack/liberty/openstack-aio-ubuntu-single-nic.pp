@@ -5,6 +5,10 @@ $metadata_proxy_shared_secret = '39c24deb-0d57-4184-81da-fc8ede37082e'
 $region_name = 'RegionOne'
 
 $cinder_lvm_loopback_device_size_mb = 10 * 1024
+$cinder_loopback_base_dir = '/var/lib/cinder'
+$cinder_loopback_device_file_name = "${cinder_loopback_base_dir}/cinder-volumes.img"
+$cinder_lvm_vg = 'cinder-volumes'
+$workers = $::processorcount
 
 $interface = 'eth0'
 $ext_bridge_interface = 'br-ex'
@@ -25,24 +29,18 @@ $ext_bridge_interface_ip = inline_template(
 if $ext_bridge_interface_ip {
   $local_ip = $ext_bridge_interface_ip
   $local_ip_netmask = inline_template(
-"<%= scope.lookupvar('::netmask_${ext_bridge_interface_repl}') -%>")
-} else {
+    "<%= scope.lookupvar('::netmask_${ext_bridge_interface_repl}') -%>")
+} 
+else {
   $local_ip = inline_template(
-"<%= scope.lookupvar('::ipaddress_${interface}') -%>")
+    "<%= scope.lookupvar('::ipaddress_${interface}') -%>")
   $local_ip_netmask = inline_template(
-"<%= scope.lookupvar('::netmask_${interface}') -%>")
+    "<%= scope.lookupvar('::netmask_${interface}') -%>")
 }
-
-$cinder_loopback_base_dir = '/var/lib/cinder'
-$cinder_loopback_device_file_name = "${cinder_loopback_base_dir}/\
-cinder-volumes.img"
-$cinder_lvm_vg = 'cinder-volumes'
-$workers = $::processorcount
 
 if !$local_ip {
   fail('$local_ip variable must be set')
 }
-
 notify { "Local IP: ${local_ip}":}
 ->
 notify { "Netmask: ${local_ip_netmask}":}
@@ -50,7 +48,6 @@ notify { "Netmask: ${local_ip_netmask}":}
 notify { "Gateway: ${gateway}":}
 
 class { 'apt': }
-
 apt::source { 'ubuntu-cloud':
   location          =>  'http://ubuntu-cloud.archive.canonical.com/ubuntu',
   repos             =>  'main',
@@ -67,7 +64,6 @@ exec { 'apt-update':
 class { 'mysql::server':
   root_password    => $admin_password,
   override_options => { 'mysqld' => { 'bind_address'           => '0.0.0.0',
-                                      # Not necessary starting from MySQL 5.5
                                       'default_storage_engine' => 'InnoDB',
                                       'max_connections'        => 1024,
                                       'open_files_limit'       => -1 } },
@@ -80,13 +76,12 @@ class { 'keystone::db::mysql':
 }
 
 class { 'keystone':
-  verbose               => True,
+  verbose               => true,
   package_ensure        => latest,
   client_package_ensure => latest,
   catalog_type          => 'sql',
   admin_token           => $admin_token,
-  database_connection   =>
-"mysql://keystone:${admin_password}@${local_ip}/keystone",
+  database_connection   => "mysql://keystone:${admin_password}@${local_ip}/keystone",
 }
 
 # Installs the service user endpoint.
@@ -99,12 +94,12 @@ class { 'keystone::endpoint':
 
 keystone_tenant { 'admin':
   ensure  => present,
-  enabled => True,
+  enabled => true,
 }
 
 keystone_tenant { 'services':
   ensure  => present,
-  enabled => True,
+  enabled => true,
 }
 
 keystone_tenant { 'demo':
@@ -113,14 +108,14 @@ keystone_tenant { 'demo':
 
 keystone_user { 'admin':
   ensure   => present,
-  enabled  => True,
+  enabled  => true,
   password => $admin_password,
   email    => 'admin@openstack',
 }
 
 keystone_user { 'demo':
   ensure   => present,
-  enabled  => True,
+  enabled  => true,
   password => $demo_password,
   email    => 'demo@openstack',
 }
@@ -148,7 +143,7 @@ keystone_user_role { 'demo@demo':
   roles  => ['demo'],
 }
 
-######## RabbitMQ
+# RabbitMQ
 
 class { '::rabbitmq':
   service_ensure    => 'running',
@@ -172,7 +167,7 @@ rabbitmq_user_permissions { 'openstack@/':
   write_permission     => '.*',
 }
 
-######## Glance
+# Glance
 
 class { 'glance::api':
   verbose             => true,
@@ -189,8 +184,6 @@ class { 'glance::registry':
   keystone_user       => 'glance',
   keystone_password   => $admin_password,
   database_connection => "mysql://glance:${admin_password}@${local_ip}/glance",
-  # Added after kilo
-  #workers             => $api_workers,
 }
 
 class { 'glance::backend::file': }
@@ -223,19 +216,19 @@ keystone_user_role { 'glance@services':
 
 exec { 'retrieve_cirros_image':
   command => 'wget -q http://download.cirros-cloud.net/0.3.4/\
-cirros-0.3.4-x86_64-disk.img -O /tmp/cirros-0.3.4-x86_64-disk.img',
+    cirros-0.3.4-x86_64-disk.img -O /tmp/cirros-0.3.4-x86_64-disk.img',
   unless  => [ "glance --os-username admin --os-tenant-name admin \
---os-password ${admin_password} --os-auth-url http://${local_ip}:35357/v2.0 \
-image-show cirros-0.3.4-x86_64" ],
+    --os-password ${admin_password} --os-auth-url http://${local_ip}:35357/v2.0 \
+    image-show cirros-0.3.4-x86_64" ],
   path    => [ '/usr/bin/', '/bin' ],
   require => [ Class['glance::api'], Class['glance::registry'] ]
 }
 ->
 exec { 'add_cirros_image':
   command => "glance --os-username admin --os-tenant-name admin --os-password \
-${admin_password} --os-auth-url http://${local_ip}:35357/v2.0 image-create \
---name cirros-0.3.4-x86_64 --file /tmp/cirros-0.3.4-x86_64-disk.img \
---disk-format qcow2 --container-format bare --is-public True",
+    ${admin_password} --os-auth-url http://${local_ip}:35357/v2.0 image-create \
+    --name cirros-0.3.4-x86_64 --file /tmp/cirros-0.3.4-x86_64-disk.img \
+    --disk-format qcow2 --container-format bare --is-public True",
   # Avoid dependency warning
   onlyif  => [ 'test -f /tmp/cirros-0.3.4-x86_64-disk.img' ],
   path    => [ '/usr/bin/', '/bin' ],
@@ -245,7 +238,7 @@ file { '/tmp/cirros-0.3.4-x86_64-disk.img':
   ensure => absent,
 }
 
-######## Nova
+# Nova
 
 keystone_service { 'nova':
   ensure      => present,
@@ -274,7 +267,7 @@ keystone_user_role { 'nova@services':
 
 class { 'nova':
   database_connection =>
-"mysql://nova:${admin_password}@${local_ip}/nova?charset=utf8",
+    "mysql://nova:${admin_password}@${local_ip}/nova?charset=utf8",
   rabbit_userid       => 'openstack',
   rabbit_password     => $admin_password,
   image_service       => 'nova.image.glance.GlanceImageService',
@@ -299,10 +292,6 @@ class { 'nova::api':
   osapi_compute_workers                => $api_workers,
   ec2_workers                          => $api_workers,
   metadata_workers                     => $api_workers,
-  #ratelimits                          =>
-  #'(POST, "*", .*, 10, MINUTE);\
-  #(POST, "*/servers", ^/servers, 50, DAY);\
-  #(PUT, "*", .*, 10, MINUTE)',
   validate                             => true,
 }
 
@@ -353,7 +342,7 @@ class { 'nova::compute::libvirt':
   libvirt_virt_type => 'kvm',
 }
 
-######## Neutron
+# Neutron
 
 keystone_service { 'neutron':
   ensure      => present,
@@ -370,7 +359,7 @@ keystone_endpoint { "${region_name}/neutron":
 
 keystone_user { 'neutron':
   ensure   => present,
-  enabled  => True,
+  enabled  => true,
   password => $admin_password,
   email    => 'neutron@openstack',
 }
@@ -400,7 +389,7 @@ class { 'neutron::server':
   auth_uri            => "http://${local_ip}:5000/v2.0",
   identity_uri        => "http://${local_ip}:35357",
   database_connection =>
-"mysql://neutron:${admin_password}@${local_ip}/neutron?charset=utf8",
+    "mysql://neutron:${admin_password}@${local_ip}/neutron?charset=utf8",
   sync_db             => true,
   api_workers         => $api_workers,
   rpc_workers         => $api_workers,
@@ -497,7 +486,7 @@ class { '::neutron::agents::metering':
 
 neutron_network { 'public':
   ensure                    => present,
-  router_external           => 'True',
+  router_external           => true,
   tenant_name               => 'admin',
   provider_network_type     => 'flat',
   provider_physical_network => 'physnet1',
@@ -583,7 +572,7 @@ package { 'openstack-dashboard-ubuntu-theme':
 }
 ~> Service['apache2']
 
-######## Cinder
+# Cinder
 
 keystone_service { 'cinder':
   ensure      => present,
@@ -613,7 +602,7 @@ keystone_endpoint { "${region_name}/cinderv2":
 
 keystone_user { 'cinder':
   ensure   => present,
-  enabled  => True,
+  enabled  => true,
   password => $admin_password,
   email    => 'cinder@openstack',
 }
@@ -662,9 +651,9 @@ file { $cinder_loopback_base_dir:
 ->
 exec { 'create_cinder_lvm_loopback_file':
   command => "dd if=/dev/zero of=${cinder_loopback_device_file_name} bs=1M \
-count=0 seek=${cinder_lvm_loopback_device_size_mb} &&
-losetup /dev/loop0 ${cinder_loopback_device_file_name} && \
-pvcreate /dev/loop0 && vgcreate ${cinder_lvm_vg} /dev/loop0",
+    count=0 seek=${cinder_lvm_loopback_device_size_mb} &&
+    losetup /dev/loop0 ${cinder_loopback_device_file_name} && \
+    pvcreate /dev/loop0 && vgcreate ${cinder_lvm_vg} /dev/loop0",
   path    => ['/usr/bin/', '/bin', '/sbin'],
   unless  => "vgdisplay ${cinder_lvm_vg}",
   creates => $cinder_loopback_device_file_name,
@@ -673,7 +662,7 @@ pvcreate /dev/loop0 && vgcreate ${cinder_lvm_vg} /dev/loop0",
 file_line { 'create_cinder_lvm_loopback_file_rc_local':
   ensure => present,
   path   => '/etc/rc.local',
-  # TODO: Initialize the loopback device somewhere else :)
+  # TODO: Initialize the loopback device somewhere else
   line   => "/sbin/losetup -f ${cinder_loopback_device_file_name} &",
 }
 ->
@@ -689,8 +678,7 @@ class { 'cinder::volume::iscsi':
   volume_group     => $cinder_lvm_vg,
 }
 
-
-######## Keystone files to be sourced
+# Keystone files to be sourced
 
 file { '/root/keystonerc_admin':
   ensure  => present,
@@ -712,4 +700,63 @@ export OS_PASSWORD=${demo_password}
 export OS_TENANT_NAME=demo
 export OS_VOLUME_API_VERSION=2
 ",
+}
+
+class { 'tempest':
+    debug                  => true,
+    use_stderr             => true,
+    log_file               => 'tempest.log',
+    
+    install_from_source    => true,
+    git_clone              => true,
+    tempest_config_file    => '/etc/tempest/tempest.conf',
+
+    # Clone config
+    tempest_repo_uri       => 'git://github.com/openstack/tempest.git',
+    tempest_repo_revision  => '7',
+    tempest_clone_path     => '/var/lib/tempest',
+    lock_path              => '/var/lib/tempest',
+    tempest_clone_owner    => 'root',
+
+    identity_uri           => "http://${local_ip}:5000/v2.0",
+    identity_uri_v3        => "http://${local_ip}:5000/v3",
+    
+    # non admin user
+    username               => 'demo',
+    password               => $demo_password,
+    tenant_name            => 'demo',
+    
+    # admin user
+    admin_username         => 'admin',
+    admin_password         => $admin_password,
+    admin_tenant_name      => 'admin',
+    admin_role             => 'admin',
+    admin_domain_name      => 'Default',
+    
+    cinder_available       => true,
+    glance_available       => true,
+    heat_available         => false,
+    ceilometer_available   => false,
+    aodh_available         => false,
+    horizon_available      => true,
+    neutron_available      => true,
+    nova_available         => true,
+    sahara_available       => false,
+    swift_available        => false,
+    trove_available        => false,
+    keystone_v2            => true,
+    keystone_v3            => true,
+    
+    # Glance image config
+    configure_images       => true,
+    flavor_ref             => '3',
+    flavor_ref_alt         => '3',
+    img_dir                => '/var/lib/tempest',
+
+    # Neutron network config
+    configure_networks     => true,
+    public_network_name    => 'public',
+
+    # Horizon dashboard config
+    dashboard_url          => "http://${local_ip}/horizon/",
 }
