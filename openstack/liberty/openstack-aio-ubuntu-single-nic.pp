@@ -171,6 +171,8 @@ rabbitmq_user_permissions { 'openstack@/':
 
 class { 'glance::api':
   verbose             => true,
+  auth_uri            => "http://${local_ip}:5000/v2.0",
+  identity_uri        => "http://${local_ip}:35357",
   keystone_tenant     => 'services',
   keystone_user       => 'glance',
   keystone_password   => $admin_password,
@@ -180,6 +182,8 @@ class { 'glance::api':
 
 class { 'glance::registry':
   verbose             => true,
+  auth_uri            => "http://${local_ip}:5000/v2.0",
+  identity_uri        => "http://${local_ip}:35357",
   keystone_tenant     => 'services',
   keystone_user       => 'glance',
   keystone_password   => $admin_password,
@@ -215,8 +219,8 @@ keystone_user_role { 'glance@services':
 }
 
 exec { 'retrieve_cirros_image':
-  command => 'wget -q http://download.cirros-cloud.net/0.3.4/\
-    cirros-0.3.4-x86_64-disk.img -O /tmp/cirros-0.3.4-x86_64-disk.img',
+  command => 'wget -q http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img\
+    -O /tmp/cirros-0.3.4-x86_64-disk.img',
   unless  => [ "glance --os-username admin --os-tenant-name admin \
     --os-password ${admin_password} --os-auth-url http://${local_ip}:35357/v2.0 \
     image-show cirros-0.3.4-x86_64" ],
@@ -251,6 +255,7 @@ keystone_endpoint { "${region_name}/nova":
   public_url   => "http://${local_ip}:8774/v2/%(tenant_id)s",
   admin_url    => "http://${local_ip}:8774/v2/%(tenant_id)s",
   internal_url => "http://${local_ip}:8774/v2/%(tenant_id)s",
+  type         => 'identity',
 }
 
 keystone_user { 'nova':
@@ -330,9 +335,9 @@ class { 'nova::compute':
 
 class { 'nova::vncproxy':
   enabled           => true,
+  vncproxy_protocol => 'http',
   host              => '0.0.0.0',
   port              => '6080',
-  vncproxy_protocol => 'http',
 }
 
 class { 'nova::compute::libvirt':
@@ -355,6 +360,7 @@ keystone_endpoint { "${region_name}/neutron":
   public_url   => "http://${local_ip}:9696",
   admin_url    => "http://${local_ip}:9696",
   internal_url => "http://${local_ip}:9696",
+  type         => 'identity',
 }
 
 keystone_user { 'neutron':
@@ -585,6 +591,7 @@ keystone_endpoint { "${region_name}/cinder":
   public_url   => "http://${local_ip}:8776/v2/%(tenant_id)s",
   admin_url    => "http://${local_ip}:8776/v2/%(tenant_id)s",
   internal_url => "http://${local_ip}:8776/v2/%(tenant_id)s",
+  type         => 'identity',
 }
 
 keystone_service { 'cinderv2':
@@ -598,6 +605,7 @@ keystone_endpoint { "${region_name}/cinderv2":
   public_url   => "http://${local_ip}:8776/v2/%(tenant_id)s",
   admin_url    => "http://${local_ip}:8776/v2/%(tenant_id)s",
   internal_url => "http://${local_ip}:8776/v2/%(tenant_id)s",
+  type         => 'identity',
 }
 
 keystone_user { 'cinder':
@@ -651,9 +659,9 @@ file { $cinder_loopback_base_dir:
 ->
 exec { 'create_cinder_lvm_loopback_file':
   command => "dd if=/dev/zero of=${cinder_loopback_device_file_name} bs=1M \
-    count=0 seek=${cinder_lvm_loopback_device_size_mb} &&
-    losetup /dev/loop0 ${cinder_loopback_device_file_name} && \
-    pvcreate /dev/loop0 && vgcreate ${cinder_lvm_vg} /dev/loop0",
+count=0 seek=${cinder_lvm_loopback_device_size_mb} && \
+losetup /dev/loop0 ${cinder_loopback_device_file_name} && \
+pvcreate /dev/loop0 && vgcreate ${cinder_lvm_vg} /dev/loop0",
   path    => ['/usr/bin/', '/bin', '/sbin'],
   unless  => "vgdisplay ${cinder_lvm_vg}",
   creates => $cinder_loopback_device_file_name,
@@ -749,6 +757,8 @@ class { 'tempest':
     
     # Glance image config
     configure_images       => true,
+    image_name             => 'cirros',
+    image_name_alt         => 'cirros_alt',
     flavor_ref             => '3',
     flavor_ref_alt         => '3',
     img_dir                => '/var/lib/tempest',
