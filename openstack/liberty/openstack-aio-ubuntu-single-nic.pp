@@ -1,3 +1,5 @@
+$install_argus = true
+
 $admin_password = 'Passw0rd'
 $demo_password = $admin_password
 $admin_token = '4b46b807-ab35-4a67-9f5f-34bbff2dd439'
@@ -87,9 +89,10 @@ class { 'keystone':
 # Installs the service user endpoint.
 class { 'keystone::endpoint':
   public_url   => "http://${local_ip}:5000",
-  admin_url    => "http://${local_ip}:35357",
   internal_url => "http://${local_ip}:5000",
+  admin_url    => "http://${local_ip}:35357",
   region       => $region_name,
+  version      => "v2.0"
 }
 
 keystone_tenant { 'admin':
@@ -103,7 +106,8 @@ keystone_tenant { 'services':
 }
 
 keystone_tenant { 'demo':
-  ensure => present,
+  ensure  => present,
+  enabled => true,
 }
 
 keystone_user { 'admin':
@@ -171,8 +175,6 @@ rabbitmq_user_permissions { 'openstack@/':
 
 class { 'glance::api':
   verbose             => true,
-  auth_uri            => "http://${local_ip}:5000/v2.0",
-  identity_uri        => "http://${local_ip}:35357",
   keystone_tenant     => 'services',
   keystone_user       => 'glance',
   keystone_password   => $admin_password,
@@ -182,8 +184,6 @@ class { 'glance::api':
 
 class { 'glance::registry':
   verbose             => true,
-  auth_uri            => "http://${local_ip}:5000/v2.0",
-  identity_uri        => "http://${local_ip}:35357",
   keystone_tenant     => 'services',
   keystone_user       => 'glance',
   keystone_password   => $admin_password,
@@ -219,18 +219,22 @@ keystone_user_role { 'glance@services':
 }
 
 exec { 'retrieve_cirros_image':
-  command => 'wget -q http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img\
+  command => 'wget -q http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img \
     -O /tmp/cirros-0.3.4-x86_64-disk.img',
-  unless  => [ "glance --os-username admin --os-tenant-name admin \
-    --os-password ${admin_password} --os-auth-url http://${local_ip}:35357/v2.0 \
+  unless  => [ "glance --os-username admin \
+    --os-tenant-name admin \
+    --os-password ${admin_password} \
+    --os-auth-url http://${local_ip}:35357/v2.0 \
     image-show cirros-0.3.4-x86_64" ],
   path    => [ '/usr/bin/', '/bin' ],
   require => [ Class['glance::api'], Class['glance::registry'] ]
 }
 ->
 exec { 'add_cirros_image':
-  command => "glance --os-username admin --os-tenant-name admin --os-password \
-    ${admin_password} --os-auth-url http://${local_ip}:35357/v2.0 image-create \
+  command => "glance --os-username admin \
+    --os-tenant-name admin \
+    --os-password ${admin_password} \
+    --os-auth-url http://${local_ip}:35357/v2.0 image-create \
     --name cirros-0.3.4-x86_64 --file /tmp/cirros-0.3.4-x86_64-disk.img \
     --disk-format qcow2 --container-format bare --is-public True",
   # Avoid dependency warning
@@ -255,7 +259,6 @@ keystone_endpoint { "${region_name}/nova":
   public_url   => "http://${local_ip}:8774/v2/%(tenant_id)s",
   admin_url    => "http://${local_ip}:8774/v2/%(tenant_id)s",
   internal_url => "http://${local_ip}:8774/v2/%(tenant_id)s",
-  type         => 'identity',
 }
 
 keystone_user { 'nova':
@@ -360,7 +363,6 @@ keystone_endpoint { "${region_name}/neutron":
   public_url   => "http://${local_ip}:9696",
   admin_url    => "http://${local_ip}:9696",
   internal_url => "http://${local_ip}:9696",
-  type         => 'identity',
 }
 
 keystone_user { 'neutron':
@@ -536,7 +538,7 @@ neutron_router_interface { 'demo_router:private_subnet':
   ensure => present,
 }
 
-######## Horizon
+# Horizon
 
 package { 'apache2':
   ensure => latest,
@@ -591,7 +593,6 @@ keystone_endpoint { "${region_name}/cinder":
   public_url   => "http://${local_ip}:8776/v2/%(tenant_id)s",
   admin_url    => "http://${local_ip}:8776/v2/%(tenant_id)s",
   internal_url => "http://${local_ip}:8776/v2/%(tenant_id)s",
-  type         => 'identity',
 }
 
 keystone_service { 'cinderv2':
@@ -605,7 +606,6 @@ keystone_endpoint { "${region_name}/cinderv2":
   public_url   => "http://${local_ip}:8776/v2/%(tenant_id)s",
   admin_url    => "http://${local_ip}:8776/v2/%(tenant_id)s",
   internal_url => "http://${local_ip}:8776/v2/%(tenant_id)s",
-  type         => 'identity',
 }
 
 keystone_user { 'cinder':
@@ -717,6 +717,7 @@ class { 'tempest':
     
     install_from_source    => true,
     git_clone              => true,
+    setup_venv             => true,
     tempest_config_file    => '/etc/tempest/tempest.conf',
 
     # Clone config
@@ -769,4 +770,39 @@ class { 'tempest':
 
     # Horizon dashboard config
     dashboard_url          => "http://${local_ip}/horizon/",
+}
+
+# Argus
+class argus(
+  $argus_clone_path    = '/var/lib/argus',
+  $argus_repo_uri      = "git://github.com/cloudbase/cloudbase-init-ci.git",
+  $argus_repo_revision = undef,
+  $argus_clone_owner   = 'root',
+
+) {
+
+  vcsrepo { $argus_clone_path:
+    ensure   => latest,
+    require  => Package['git'],
+    source   => $argus_repo_uri,
+    revision => $argus_repo_revision,
+    provider => 'git',
+    user     => $argus_clone_owner,
+  }
+
+  exec { 'install-requirements':
+    command => "${tempest::tempest_clone_path}/.venv/bin/pip install -r requirements.txt",
+    cwd     => $argus_clone_path,
+    require => Exec['install-pip', 'setup-venv'],
+  }
+
+  exec { 'install-argus':
+    command => "${tempest::tempest_clone_path}/.venv/bin/python setup.py install",
+    cwd     => $argus_clone_path,
+    require => Exec['install-requirements']
+  }
+}
+
+if $install_argus {
+  class {'argus': }
 }
