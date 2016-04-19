@@ -29,7 +29,6 @@ Liberty
 * Neutron / Open vSwitch
 * Cinder / LVM
 * Horizon
-* Tempest
 
 To be added soon:
 
@@ -50,7 +49,6 @@ sudo puppet module install openstack/glance --version ">=7.0.0 <8.0.0"
 sudo puppet module install openstack/cinder --version ">=7.0.0 <8.0.0"
 sudo puppet module install openstack/nova --version ">=7.0.0 <8.0.0"
 sudo puppet module install openstack/neutron --version ">=7.0.0 <8.0.0"
-sudo puppet module install openstack/tempest --version ">=7.0.0 <8.0.0"
 sudo puppet module install example42/network
 sudo puppet module install saz/memcached
 ```

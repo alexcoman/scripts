@@ -1,5 +1,3 @@
-$install_argus = true
-
 $admin_password = 'Passw0rd'
 $demo_password = $admin_password
 $admin_token = '4b46b807-ab35-4a67-9f5f-34bbff2dd439'
@@ -16,9 +14,9 @@ $interface = 'eth0'
 $ext_bridge_interface = 'br-ex'
 $dns_nameservers = ['8.8.8.8', '8.8.4.4']
 $private_subnet_cidr = '192.168.1.0/24'
-$public_subnet_cidr = '10.0.2.0/24'
-$public_subnet_gateway = '10.0.2.2'
-$public_subnet_allocation_pools = ['start=10.0.2.20,end=10.0.2.50']
+$public_subnet_cidr = '192.168.171.0/24'
+$public_subnet_gateway = '192.168.171.2'
+$public_subnet_allocation_pools = ['start=192.168.171.20,end=192.168.171.50']
 
 # Note: this is executed on the master
 $gateway = generate('/bin/sh',
@@ -646,7 +644,7 @@ class { 'cinder::db::mysql':
 
 class { 'cinder::scheduler':
   enabled          => true,
-  scheduler_driver => 'cinder.scheduler.simple.SimpleScheduler',
+  scheduler_driver => 'cinder.scheduler.filter_scheduler.FilterScheduler',
 }
 
 class { 'cinder::volume':
@@ -708,101 +706,4 @@ export OS_PASSWORD=${demo_password}
 export OS_TENANT_NAME=demo
 export OS_VOLUME_API_VERSION=2
 ",
-}
-
-class { 'tempest':
-    debug                  => true,
-    use_stderr             => true,
-    log_file               => 'tempest.log',
-    
-    install_from_source    => true,
-    git_clone              => true,
-    setup_venv             => true,
-    tempest_config_file    => '/etc/tempest/tempest.conf',
-
-    # Clone config
-    tempest_repo_uri       => 'git://github.com/openstack/tempest.git',
-    tempest_repo_revision  => '7',
-    tempest_clone_path     => '/var/lib/tempest',
-    lock_path              => '/var/lib/tempest',
-    tempest_clone_owner    => 'root',
-
-    identity_uri           => "http://${local_ip}:5000/v2.0",
-    identity_uri_v3        => "http://${local_ip}:5000/v3",
-    
-    # non admin user
-    username               => 'demo',
-    password               => $demo_password,
-    tenant_name            => 'demo',
-    
-    # admin user
-    admin_username         => 'admin',
-    admin_password         => $admin_password,
-    admin_tenant_name      => 'admin',
-    admin_role             => 'admin',
-    admin_domain_name      => 'Default',
-    
-    cinder_available       => true,
-    glance_available       => true,
-    heat_available         => false,
-    ceilometer_available   => false,
-    aodh_available         => false,
-    horizon_available      => true,
-    neutron_available      => true,
-    nova_available         => true,
-    sahara_available       => false,
-    swift_available        => false,
-    trove_available        => false,
-    keystone_v2            => true,
-    keystone_v3            => true,
-    
-    # Glance image config
-    configure_images       => true,
-    image_name             => 'cirros',
-    image_name_alt         => 'cirros_alt',
-    flavor_ref             => '3',
-    flavor_ref_alt         => '3',
-    img_dir                => '/var/lib/tempest',
-
-    # Neutron network config
-    configure_networks     => true,
-    public_network_name    => 'public',
-
-    # Horizon dashboard config
-    dashboard_url          => "http://${local_ip}/horizon/",
-}
-
-# Argus
-class argus(
-  $argus_clone_path    = '/var/lib/argus',
-  $argus_repo_uri      = "git://github.com/cloudbase/cloudbase-init-ci.git",
-  $argus_repo_revision = undef,
-  $argus_clone_owner   = 'root',
-
-) {
-
-  vcsrepo { $argus_clone_path:
-    ensure   => latest,
-    require  => Package['git'],
-    source   => $argus_repo_uri,
-    revision => $argus_repo_revision,
-    provider => 'git',
-    user     => $argus_clone_owner,
-  }
-
-  exec { 'install-requirements':
-    command => "${tempest::tempest_clone_path}/.venv/bin/pip install -r requirements.txt",
-    cwd     => $argus_clone_path,
-    require => Exec['install-pip', 'setup-venv'],
-  }
-
-  exec { 'install-argus':
-    command => "${tempest::tempest_clone_path}/.venv/bin/python setup.py install",
-    cwd     => $argus_clone_path,
-    require => Exec['install-requirements']
-  }
-}
-
-if $install_argus {
-  class {'argus': }
 }
