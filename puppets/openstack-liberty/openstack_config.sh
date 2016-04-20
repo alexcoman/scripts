@@ -6,7 +6,7 @@ function delete_openstack_networks() {
     # ######################################## #
 
     # Remove the private subnet from the router
-    neutron router-interface-delete demo_router private-subnet
+    neutron router-interface-delete demo_router private_subnet
 
     # Remove the public network from the router
     neutron router-gateway-clear demo_router
@@ -46,7 +46,7 @@ function create_openstack_networks() {
     echo "[i] Public sub-network id: $EXTNET_ID";
 
     # Create the public subnetwork
-    SUBNET_ID=$(neutron subnet-create public 10.0.2.0/24 --gateway 10.0.2.2 --allocation-pool start=10.0.2.20,end=10.0.2.50 --disable-dhcp);
+    SUBNET_ID=$(neutron subnet-create public 192.168.171.0/24 --gateway 192.168.171.2 --allocation-pool start=192.168.171.20,end=192.168.171.50 --disable-dhcp);
     echo "[i] Public sub-network id: $SUBNET_ID";
 
     # Attach the public network to the router
