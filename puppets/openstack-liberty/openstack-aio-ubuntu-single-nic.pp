@@ -630,7 +630,7 @@ class { 'cinder::api':
   enabled           => true,
   keystone_user     => 'cinder',
   keystone_password => $admin_password,
-  auth_uri          => "http://${local_ip}:5000/v2.0",
+  auth_uri          => "http://${local_ip}:5000/v3",
   identity_uri      => "http://${local_ip}:35357",
   sync_db           => true,
   service_workers   => $api_workers,
