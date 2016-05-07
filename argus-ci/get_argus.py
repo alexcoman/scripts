@@ -4,9 +4,12 @@
 import abc
 import argparse
 import os
+import logging
+import platform
+import sys
+import shutil
 import subprocess
 import time
-import threading
 
 import six
 
@@ -46,6 +49,12 @@ class Task(Worker):
     def __init__(self, executor=None):
         super(Task, self).__init__()
         self._executor = executor
+        self._name = self.__class__.__name__
+
+    @property
+    def name(self):
+        """Return the name of the task."""
+        return self._name
 
     def task_done(self, result):
         """What to execute after successfully finished processing a task."""
@@ -83,7 +92,6 @@ class Executor(Worker):
         self._queue = []
         self._delay = delay
         self._loop = loop
-        self._stop_event = threading.Event()
 
     @abc.abstractmethod
     def on_task_done(self, task, result):
@@ -124,11 +132,9 @@ class Executor(Worker):
     def run(self):
         """Processes incoming tasks."""
         self._prologue()
-        while not self._stop_event.is_set():
+        while self._queue:
             try:
                 self._work()
-                if not self._loop:
-                    break
             except KeyboardInterrupt:
                 self.on_interrupted()
                 break
@@ -143,6 +149,11 @@ class Command(Task):
         self._attemts, self._retry_interval = None, None
         self._venv, self._setup_venv = None, None
         self._python, self._pip = None, None
+
+    @property
+    def logger(self):
+        """Expose the logger object."""
+        return self._executor.logger
 
     def _prologue(self):
         """Executed once before the command running."""
@@ -241,13 +252,45 @@ class Application(Executor):
     def __init__(self):
         super(Application, self).__init__(delay=0, loop=False)
         self._config = {}
+        self._logger = None
 
     @property
     def config(self):
         """Expose the arguments received from the client."""
+        if not self._config:
+            self._config = vars(self._get_config())
+
         return self._config
 
-    def _prologue(self):
+    @property
+    def logger(self):
+        """Expose the logger object."""
+        if not self._logger:
+            level = (logging.DEBUG if self.config.get('verbose')
+                     else logging.ERROR)
+            self._logger = self._get_logger(__name__, level)
+        return self._logger
+
+    @staticmethod
+    def _get_logger(name, level):
+        """Obtain a new logger object."""
+        logger = logging.getLogger(name)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - "
+                                      "%(levelname)s - %(message)s")
+
+        if not logger.handlers:
+            # If the logger wasn't obtained another time,
+            # then it shouldn't have any loggers
+
+            stdout_handler = logging.StreamHandler(sys.stdout)
+            stdout_handler.setFormatter(formatter)
+            logger.addHandler(stdout_handler)
+
+        logger.setLevel(level)
+        return logger
+
+    @staticmethod
+    def _get_config():
         """Process the information received from the client."""
         parser = argparse.ArgumentParser(
             description="Install the Argus-CI on the current machine.")
@@ -257,7 +300,8 @@ class Application(Executor):
             help="Interval between execute attempts, in seconds. "
                  "(Default: 3)")
         parser.add_argument(
-            "--retry_interval", dest="retry_interval", type=float, default=0.1,
+            "--retry_interval", dest="retry_interval",
+            type=float, default=0.1,
             help="How many times to retry running the command. "
                  "(Default: 0.1)")
 
@@ -266,9 +310,10 @@ class Application(Executor):
             "--no-venv", dest="setup_venv", action="store_false",
             help="Install the requirements on the global environment")
         group.add_argument(
-            "--venv", dest="venv", type=str, default="/var/lib/argus-env",
+            "--venv", dest="venv", type=str,
+            default=os.path.expanduser("~/argus-env"),
             help="The path for the virtual environment. "
-                 "(Default: /var/lib/argus-env)"
+                 "(Default: ~/argus-env)"
         )
 
         parser.add_argument(
@@ -286,7 +331,54 @@ class Application(Executor):
         group.add_argument("-q", "--quiet", action="store_true",
                            default=False)
 
-        self._config = parser.parse_args()
+        return parser.parse_args()
+
+    def on_task_done(self, task, result):
+        """What to execute after successfully finished processing a task."""
+        self.logger.info("The task %r was successfully processed. "
+                         "(result: %s)", task, result)
+
+    def on_task_fail(self, task, exc):
+        """What to do when the program fails processing a task."""
+        self.logger.error("The processing of the %r failled: %s.", task, exc)
+        if isinstance(exc, subprocess.CalledProcessError):
+            stdout, stderr = getattr(exc, "output", ('', ''))
+            self.logger.debug("Task %r stdout: %s", task.name, stdout)
+            self.logger.debug("Task %r stderr: %s", task.name, stderr)
+
+    def on_interrupted(self):
+        """What to execute when keyboard interrupts arrive."""
+        raise KeyboardInterrupt()
+
+
+class SetupEnvironment(Command):
+
+    """Command used for installing the global requirements."""
+
+    def __init__(self, executor):
+        super(SetupEnvironment, self).__init__(executor=executor)
+        self._routes = {
+            "win32": {"default": None},
+            "linux2": {"default": "_ubuntu_14_04"},
+        }
+
+    def _ubuntu_14_04(self):
+        """Install dependences for Argus-Ci on Ubuntu 14.04."""
+        self._execute(["sudo", "apt-get", "install", "-y", "build-essential",
+                       "git", "python-dev", "libffi-dev", "libssl-dev"])
+        self._execute(["sudo", "apt-get", "install", "-y", "python-pip"])
+        self._execute(["sudo", "pip", "install", "virtualenv"])
+
+    def _work(self):
+        """Install dependences for Argus-Ci."""
+        distributions = self._routes.get(sys.platform, {})
+        method = getattr(self, distributions.get(platform.dist(), "default"),
+                         None)
+        if not method:
+            self.logger.warning("SetupEnvironment not available on %r - %r",
+                                sys.platform, platform.dist())
+        else:
+            method()
 
 
 class CreateEnvironment(Command):
@@ -295,8 +387,13 @@ class CreateEnvironment(Command):
 
     def _work(self):
         """Create the virtual environment for Argus-Ci and Tempest."""
-        if self._setup_venv:
-            # TODO(alexandrucoman): Check if th recieved path is available
+        if not self._setup_venv:
+            return
+
+        if os.path.isdir(self._venv):
+            self.logger.warning("The virtual environment already exists. %s",
+                                self._venv)
+        else:
             self._execute(["virtualenv", self._venv, "--python",
                            "/usr/bin/python2.7"])
 
@@ -319,9 +416,12 @@ class InstallTempest(Command):
     def _prologue(self):
         """Executed once before the command running."""
         super(InstallTempest, self)._prologue()
-        branch = self._executor.get('tempest_branch')
+        branch = self._executor.config.get('tempest_branch')
 
-        # TODO(alexandrucoman): Check if the clone path is available
+        if os.path.isdir(self._clone_path):
+            self.logger.info("Removing the directory %r", self._clone_path)
+            shutil.rmtree(self._clone_path)
+
         self._execute(["git", "clone", self.REPO, self._clone_path])
         self._execute(["git", "checkout", branch], cwd=self._clone_path)
 
@@ -353,9 +453,12 @@ class InstallArgusCi(Command):
     def _prologue(self):
         """Executed once before the command running."""
         super(InstallArgusCi, self)._prologue()
-        branch = self._executor.get('argus_branch')
+        branch = self._executor.config.get('argus_branch')
 
-        # TODO(alexandrucoman): Check if the clone path is available
+        if os.path.isdir(self._clone_path):
+            self.logger.info("Removing the directory %r", self._clone_path)
+            shutil.rmtree(self._clone_path)
+
         self._execute(["git", "clone", self.REPO, self._clone_path])
         self._execute(["git", "checkout", branch], cwd=self._clone_path)
 
@@ -375,6 +478,10 @@ class InstallArgusCi(Command):
 def main():
     """Run the command line application."""
     application = Application()
+
+    if os.geteuid() == 0:
+        application.put_task(task=SetupEnvironment(application))
+
     # Create the virtual environment for Argus-Ci
     application.put_task(task=CreateEnvironment(application))
     # Install Tempest and its requirements
@@ -382,6 +489,7 @@ def main():
     # Install Arugs-Ci and its requirements
     application.put_task(task=InstallArgusCi(application))
     # Run the application
+
     application.run()
 
 
