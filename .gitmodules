@@ -1,0 +1,3 @@
+[submodule "argus-ci/argusvm"]
+	path = argus-ci/argusvm
+	url = https://github.com/alexandrucoman/argusvm
