@@ -171,7 +171,7 @@ Install the tempest (realease 7)
 ```bash
 ~ $ cd
 ~ $ sudo ln -s /opt/stack/tempest/etc /etc/tempest
-~ $ sudo ln -s argus-ci/etc /etc/argus
+~ $ sudo ln -s ~/argus-ci/etc /etc/argus
 ```
 
 Update the argus.conf
