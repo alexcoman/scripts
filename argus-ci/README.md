@@ -131,13 +131,13 @@ nova flavor-create win-large 3 6144 40 4
 Clone the repository:
 
 ```bash
-~ $ git clone https://github.com/PCManticore/argus-ci
+~ $ git clone https://github.com/cloudbase/cloudbase-init-ci/
 ```
 
 Switch to the develop branch
 
 ```bash
-~ $ cd argus-ci
+~ $ cd cloudbase-init-ci
 ~ $ git checkout develop
 ```
 
@@ -171,7 +171,7 @@ Install the tempest (realease 7)
 ```bash
 ~ $ cd
 ~ $ sudo ln -s /opt/stack/tempest/etc /etc/tempest
-~ $ sudo ln -s ~/argus-ci/etc /etc/argus
+~ $ sudo ln -s ~/cloudbase-init-ci/etc /etc/argus
 ```
 
 Update the argus.conf
