@@ -132,7 +132,7 @@ Notice: Installing -- do not interrupt ...
 
 
 ```bash
-~ $ wget https://goo.gl/iO8wi0 -O /tmp/apt.diff && cd /etc/puppet/modules/rabbitmq/manifests/repo/ && sudo git apply /tmp/apt.diff && cd ~
+~ $ wget https://goo.gl/WsDtjU -O /tmp/apt.diff && cd /etc/puppet/modules/rabbitmq/manifests/repo/ && sudo git apply /tmp/apt.diff && cd ~
 ```
 
 ```bash
