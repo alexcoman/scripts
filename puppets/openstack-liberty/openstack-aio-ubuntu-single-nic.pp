@@ -3,6 +3,7 @@ $demo_password = $admin_password
 $admin_token = '4b46b807-ab35-4a67-9f5f-34bbff2dd439'
 $metadata_proxy_shared_secret = '39c24deb-0d57-4184-81da-fc8ede37082e'
 $region_name = 'RegionOne'
+$user = 'ubuntu'
 
 $cinder_lvm_loopback_device_size_mb = 10 * 1024
 $cinder_loopback_base_dir = '/var/lib/cinder'
@@ -14,9 +15,11 @@ $interface = 'eth0'
 $ext_bridge_interface = 'br-ex'
 $dns_nameservers = ['8.8.8.8', '8.8.4.4']
 $private_subnet_cidr = '192.168.1.0/24'
-$public_subnet_cidr = '192.168.171.0/24'
-$public_subnet_gateway = '192.168.171.2'
-$public_subnet_allocation_pools = ['start=192.168.171.20,end=192.168.171.50']
+$public_subnet_cidr = '10.0.1.0/24'
+$public_subnet_gateway = '10.0.1.1'
+$floating_ips_start = '10.0.1.50'
+$floating_ips_stop =  '10.0.1.60'
+$public_subnet_allocation_pools = ["start=${floating_ips_start},end=${floating_ips_stop}"]
 
 # Note: this is executed on the master
 $gateway = generate('/bin/sh',
@@ -24,7 +27,7 @@ $gateway = generate('/bin/sh',
 
 $ext_bridge_interface_repl = regsubst($ext_bridge_interface, '-', '_')
 $ext_bridge_interface_ip = inline_template(
-"<%= scope.lookupvar('::ipaddress_${ext_bridge_interface_repl}') -%>")
+  "<%= scope.lookupvar('::ipaddress_${ext_bridge_interface_repl}') -%>")
 
 if $ext_bridge_interface_ip {
   $local_ip = $ext_bridge_interface_ip
@@ -47,13 +50,16 @@ notify { "Netmask: ${local_ip_netmask}":}
 ->
 notify { "Gateway: ${gateway}":}
 
+package { 'ubuntu-cloud-keyring':
+  ensure => latest,
+}
+
 class { 'apt': }
 apt::source { 'ubuntu-cloud':
   location          =>  'http://ubuntu-cloud.archive.canonical.com/ubuntu',
   repos             =>  'main',
   release           =>  'trusty-updates/liberty',
-  include_src       =>  false,
-  required_packages =>  'ubuntu-cloud-keyring',
+  include           =>  {'src' => false,},
 }
 ->
 exec { 'apt-update':
@@ -511,33 +517,33 @@ neutron_subnet { 'public_subnet':
 
 neutron_network { 'private':
   ensure                => present,
-  tenant_name           => 'demo',
+  tenant_name           => 'admin',
   provider_network_type => 'vlan',
-  shared                => false,
+  shared                => true,
 }
 
 neutron_subnet { 'private_subnet':
   ensure          => present,
   cidr            => $private_subnet_cidr,
   network_name    => 'private',
-  tenant_name     => 'demo',
+  tenant_name     => 'admin',
   enable_dhcp     => true,
   dns_nameservers => $dns_nameservers,
 }
 
-neutron_router { 'demo_router':
+neutron_router { 'router':
   ensure               => present,
-  tenant_name          => 'demo',
+  name                 => 'router1',
+  tenant_name          => 'admin',
   gateway_network_name => 'public',
   require              => Neutron_subnet['public_subnet'],
 }
 
-neutron_router_interface { 'demo_router:private_subnet':
+neutron_router_interface { 'router1:private_subnet':
   ensure => present,
 }
 
 # Horizon
-
 package { 'apache2':
   ensure => latest,
 }
@@ -686,7 +692,10 @@ class { 'cinder::volume::iscsi':
 
 # Keystone files to be sourced
 
-file { '/root/keystonerc_admin':
+file { "/home/${user}/.keystonerc_admin":
+  owner => $user,
+  group => $user,
+  mode  => '0744',
   ensure  => present,
   content =>
 "export OS_AUTH_URL=http://${local_ip}:35357/v2.0
@@ -697,7 +706,10 @@ export OS_VOLUME_API_VERSION=2
 ",
 }
 
-file { '/root/keystonerc_demo':
+file { "/home/${user}/.keystonerc_demo":
+  owner => $user,
+  group => $user,
+  mode  => '0744',
   ensure  => present,
   content =>
 "export OS_AUTH_URL=http://${local_ip}:35357/v2.0
@@ -706,4 +718,10 @@ export OS_PASSWORD=${demo_password}
 export OS_TENANT_NAME=demo
 export OS_VOLUME_API_VERSION=2
 ",
+}
+
+file_line { 'os-auth-url':
+  ensure => present,
+  path => "/home/${user}/.bashrc",
+  line => "source /home/${user}/.keystonerc_admin",
 }
