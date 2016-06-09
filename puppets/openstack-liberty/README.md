@@ -132,15 +132,15 @@ Notice: Installing -- do not interrupt ...
 
 
 ```bash
-~ $ wget https://goo.gl/iO8wi0 -O /tmp/apt.diff && cd /etc/puppet/modules/rabbitmq/manifests/repo/ && sudo git apply /tmp/apt.diff && cd ~
+wget https://goo.gl/WsDtjU -O /tmp/apt.diff && cd /etc/puppet/modules/rabbitmq/manifests/repo/ && sudo git apply /tmp/apt.diff && cd ~
 ```
 
 ```bash
-~ $ wget https://goo.gl/feQwGN -O /tmp/rabbitmq_spec.diff && cd /etc/puppet/modules/rabbitmq/spec/classes/ && sudo git apply /tmp/rabbitmq_spec.diff && cd ~
+wget https://goo.gl/Na6V6o -O /tmp/rabbitmq_spec.diff && cd /etc/puppet/modules/rabbitmq/spec/classes/ && sudo git apply /tmp/rabbitmq_spec.diff && cd ~
 ```
 
 ```bash
-~ $ wget https://goo.gl/fM7daR -O /tmp/metadata.diff && cd /etc/puppet/modules/rabbitmq && sudo git apply /tmp/metadata.diff && cd ~
+wget https://goo.gl/fM7daR -O /tmp/metadata.diff && cd /etc/puppet/modules/rabbitmq && sudo git apply /tmp/metadata.diff && cd ~
 ```
 
 More information related to this patch can be found on the following [link][3].
