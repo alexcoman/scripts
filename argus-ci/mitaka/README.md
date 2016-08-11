@@ -1,7 +1,7 @@
 Argus-CI Environment
 ==================
 
-Create an OpenStack environment using ROD .
+Create an OpenStack environment using RDO, you can follow this tutorial [Deploy Openstack Mitaka with RDO][1]
 
 ### Time Synchronisation with NTP
 NTP is a TCP/IP protocol for synchronising time over a network. Basically a client requests the current time from a server, and uses it to set its own clock.
@@ -9,13 +9,13 @@ NTP is a TCP/IP protocol for synchronising time over a network. Basically a clie
 In order to install `ntp` run the following command: 
 
 ```bash
-~ $ sudo apt-get install ntp
+~ $ sudo yum install ntp
 ```
 
 Start the service:
 
 ```
-~ $ sudo service ntp force-reload
+~ $ sudo service ntpd force-reload
 ```
 
 If the time is not properlly set you can run the following command:
@@ -41,21 +41,12 @@ nova flavor-delete 451
 nova flavor-create win-small 1 2048 40 1
 nova flavor-create win-medium 2 4096 40 2
 nova flavor-create win-large 3 6144 40 4
-```
-
-### Install Argus-CI
+``` ### Install Argus-CI
 
 Clone the repository:
 
 ```bash
 ~ $ git clone https://github.com/cloudbase/cloudbase-init-ci/
-```
-
-Switch to the develop branch
-
-```bash
-~ $ cd cloudbase-init-ci
-~ $ git checkout develop
 ```
 
 Create a new virtual environment for the Argus-CI project
@@ -69,11 +60,11 @@ Create a new virtual environment for the Argus-CI project
 Install the Argus-CI project
 
 ```bash
-~ $ pip install -r requirements.txt
-~ $ python setup.py develop
+(argus-ci) ~ $ pip install -r requirements.txt
+(argus-ci) ~ $ python setup.py develop
 ```
 
-Install the tempest (realease 11)
+Install the tempest (realease 11.0.0)
 
 ```bash
 (argus-ci) ~ $ cd ~/
@@ -90,7 +81,6 @@ Install the tempest (realease 11)
 
 ```bash
 ~ $ cd
-~ $ sudo ln -s /opt/stack/tempest/etc /etc/tempest
 ~ $ sudo ln -s ~/cloudbase-init-ci/etc /etc/argus
 ```
 
@@ -123,7 +113,9 @@ group = Administrators
 ```
 
 
-Move the `tempest.conf` file in the apropriate director.
+### Configure tempest
+
+Move the `tempest.conf` file in the apropriate director.(The sample is in this repo)
 ```bash
 ~ $ sudo mkdir /etc/tempest
 ~ $ sudo mv scripts/argus-ci/mitaka/tempest.conf /etc/tempest/tempest.conf
@@ -171,3 +163,24 @@ default_network = 10.100.0.0/24
 public_router_id = <none>
 public_network_id = <none>
 ```
+
+```ini
+[dashboard]
+dashboard_url = http://<LOCAL IP>/horizon/
+```
+Where `LOCAL_IP` is the static IP of the host.
+
+All of this info cand be found using :
+```bash
+(keystonerc_admin)~ $ neutron net-list
+(keystonerc_admin)~ $ neutron router-list
+(keystonerc_admin)~ $ echo $OS_PASSWORD
+```
+
+## Neutron config
+Add this line in `/etc/neutron/dnsmasq-neutron.conf`
+```ini
+~ $ echo "dhcp-option-force=42,188.214.141.10" | sudo tee -a /etc/neutron/dnsmasq-neutron.conf
+```
+
+[1]: /rdo/openstack-mitaka/README.md
