@@ -8,10 +8,10 @@
     - Number of processors: 2
     - Number of cores per processor 2
 - Memory: 6GB RAM (Recommended)
-- HDD - SATA - Minimum 60 GB (Recommended *Preallocated*)
+- HDD - SATA - Minimum 100 GB (Recommended *Preallocated*)
 - Network:
     - Network Adapter :  **NAT**
-- Operating system - **CentOS 7** (Recommended) 
+- Operating system - **CentOS 7**
 
 Note: The Hypervisor used for this example is **VMWare Workstation 11**
 
@@ -29,10 +29,6 @@ Note: The Hypervisor used for this example is **VMWare Workstation 11**
 ~ $ sudo systemctl enable network
 ~ $ sudo systemctl start network
 ~ $ sudo yum remove NetworkManager
-~ $ sudo systemctl mask firewalld
-~ $ sudo systemctl disable firewalld
-~ $ sudo systemctl mask NetworkManager
-
 ```
 
 ```bash
@@ -150,6 +146,11 @@ DNS2=8.8.8.8
 ~ $ sudo su
 ~ $ source ~/keystonerc_admin
 
+# Copy in the working user home directory
+
+~ $ sudo cp /root/keystonerc_admin ~/
+~ $ sudo chown $USER ~/keystonerc_admin
+
 # The password can be found in ```keystonerc_admin``` or by simply echo-ing it
 
 ~ $ echo $OS_PASSWORD
@@ -158,57 +159,62 @@ DNS2=8.8.8.8
 
 ~ $ sudo ovs-vsctl add-port br-ex "the-eno-name"
 ```
+You can find `the-eno-name` with `ip a` of `ifconfig`.
 
 ## Configure the network with neutron
 
 ```bash
+# Clear the router gateway
+
+(keystonerc_admin) ~ $ neutron router-gateway-clear router1
 
 # Delete the default public network
 
-~ $ neutron net-delete public
+(keystonerc_admin) ~ $ neutron net-delete public
 
 # Create a new public network
 
-~ $ neutron net-create --shared --router:external public
+(keystonerc_admin) ~ $ neutron net-create --shared --router:external public
 
 # Configure the newly created public network
 
-~ $ neutron subnet-create public 10.0.2.0/24 --name public_subnet --enable-dhcp=False --allocation-pool start=10.0.2.140,end=10.0.2.160 --gateway 10.0.2.2
+(keystonerc_admin) ~ $ neutron subnet-create public 10.0.2.0/24 --name public_subnet --enable-dhcp=False --allocation-pool start=10.0.2.140,end=10.0.2.160 --gateway 10.0.2.2
 
 # Create a new router and set the gateway for it
 
-~ $ neutron router-create router
-~ $ neutron router-gateway-set $router_id $public_network_id
+(keystonerc_admin) ~ $ neutron router-create router
+(keystonerc_admin) ~ $ neutron router-gateway-set $router_id $public_network_id
 
 # Add the private subnet to the routers interfaces
 
-~ $ neutron router-interface-add router private_subnet
+(keystonerc_admin) ~ $ neutron router-interface-add router private_subnet
 
 # Update the private_subnet DNS nameserver
 # Run ```neutron subnet-list``` to see the subnets IDs.
 
-~ $ neutron subnet-update --dns-nameserver 8.8.8.8 "private_subnet_id"
+(keystonerc_admin) ~ $ neutron subnet-update --dns-nameserver 8.8.8.8 "private_subnet_id"
 ```
 
-## Install tempest for ArgusCI
-You need to have the argus setup in a virtualenv before this step.
+
+# Update nova.conf
+**IMPORTANT 1:** It might happen that nova.conf virt_type value is set on qemu instead of kvm(Windows instaces won't be able to boot up if that's the case). In that case please do the following:
+In `/etc/nova/nova.conf` you need to have this configurations set in order to boot windows instances.
+```ini
+...
+virt_type=kvm # by default it might be qemu
+...
+cpu_model=host-passthrough # by default if might be none 
+..
+```
+
 ```bash
+# You can then either reboot the machine or restart the services 
 
-~ $ cd ~/
-~ $ git clone https://github.com/openstack/tempest.git
-~ $ cd tempest
-~ $ git checkout 11.0.0 # change version for mitaka and argus
-# activate argus virtualenv
-~ $ source ~/cloudbase-init-ci/.venv/argus/bin/activate # this may differ
-~ $ pip install ~/tempest 
-# Install the dependecies under the virtualenv
-~ $ pip install -r ~/tempest/requirements.txt
-~ $ pip install -r ~/tempest/test-requirements.txt
-
+~ $ sudo openstack-service restart
 ```
 
 ## Other details
-**IMPORTANT 1:** In case you wish to re-run packstack with a updated answerfile you can simply run the following:
+**IMPORTANT 2:** In case you wish to re-run packstack with a updated answerfile you can simply run the following:
 
 ####NOTE: by default ```$youranswerfile``` is called packstack-answer-$date-$time.txt
 
@@ -216,18 +222,6 @@ You need to have the argus setup in a virtualenv before this step.
 ~ $ sudo packstack --answer-file=$youranswerfile
 ```
 
-**IMPORTANT 2:** It might happen that nova.conf virt_type value is set on qemu instead of kvm(Windows instaces won't be able to boot up if that's the case). In that case please do the following:
-```bash
-
-~ $ sudo vim /etc/nova/nova.conf
-
-# Search for virt_type and replace qemu with kvm
-
-# You can then either reboot the machine or restart the services 
-
-~ $ sudo openstack-service restart
-
-```
 
 **IMPORTANT 3:** In the case of Windows 10 and Windows Server 2016 there are some CPU features that have to be enabled.In nova.conf search for the `cpu_mode` field and set it to host-passthrough. Restart the service.
 
@@ -275,10 +269,7 @@ More info here :
 2016-04-29 14:56:58.381 2175 ERROR nova.api.openstack.extensions TypeError: __init__() got an unexpected keyword argument 'vals'
  ```
 
- To fix this you can try to force a working version of `paramiko` withh this command
- `sudo pip install paramiko==1.16.0`.I'm not sure about the side efects for this, this may break other thing.
-This seems to be fixed but some issues still exist on launchpad, it might be the enviroment or
-the rdo install.
+I think you installed tempest requirements globaly, and that sucks for you, you may need to redeploy.
 
  More info you can find here :
  - https://bugs.launchpad.net/openstack-ansible/+bug/1576755
