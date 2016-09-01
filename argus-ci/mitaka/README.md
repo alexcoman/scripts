@@ -64,11 +64,11 @@ Install the Argus-CI project
 (argus-ci) ~ $ python setup.py develop
 ```
 
-Install the tempest (realease 11.0.0)
+Install the tempest (release 11.0.0)
 
 ```bash
 (argus-ci) ~ $ cd ~/
-(argus-ci) ~ $ git clone clone https://github.com/openstack/tempest.git
+(argus-ci) ~ $ git clone https://github.com/openstack/tempest.git
 (argus-ci) ~ $ cd tempest
 (argus-ci) ~ $ git checkout 11.0.0 
 (argus-ci) ~ $ pip install ~/tempest
@@ -92,7 +92,7 @@ Update the argus.conf
 [argus]
 path_to_private_key = key.pem
 dns_nameservers = 8.8.8.8
-resources = https://raw.githubusercontent.com/PCManticore/argus-ci/develop/argus/resources
+resources = https://raw.githubusercontent.com/cloudbase/cloudbase-init-ci/master/argus/resources
 output_directory = instance
 build = Beta
 arch = x64
@@ -182,5 +182,15 @@ Add this line in `/etc/neutron/dnsmasq-neutron.conf`
 ```ini
 ~ $ echo "dhcp-option-force=42,188.214.141.10" | sudo tee -a /etc/neutron/dnsmasq-neutron.conf
 ```
+
+## Heat fix
+In order for the Heat Scenario Test to pass we need to edit the `/etc/heat/heat.conf` the `trusts_delegated_roles` field. To avoid any `missing required credential` type of errors, the field should be left empty. And also make sure that you have run `source keystonerc_admin` before running the tests with Argus, as it could possibly not find the required group by itself.
+
+##Remove the hardcoded MTU value set by neutron
+
+By default in the `/etc/neutron/dnsmasq-neutron.conf` there will be a option called `dhcp-option-force=26,1400`, which will force the MTU value of 1400 for any future instances, a better approach being to simply delete this line, so that we don't trigger any unwanted behaviour.
+
+**IMPORTANT 1:** In case git clone or any kind of download doesn't work on the instance, you would need to override the MTU value set in the machine, in order for the packets to pass and not have them dropped.
+You can simply run this following command if it happens for the packets to drop: `netsh interface ipv4 set subinterface "Ethernet" mtu=1450 store=persistent` 
 
 [1]: /rdo/openstack-mitaka/README.md
