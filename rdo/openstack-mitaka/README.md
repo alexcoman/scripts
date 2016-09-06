@@ -242,9 +242,6 @@ cpu_model=host-passthrough # by default if might be none
 **IMPORTANT 5:** To avoid some errors with running tests, read permissions should be added to the "/etc/neutron" folder.
 
 
-**IMPORTANT 6:** Because of some changes in Mitaka we have to edit in /etc/heat/heat.conf the `trusts_delegated_roles` field. To avoid any `missing required credential` type of errors, the field should be left empty.
-
-
 
 #### Pip erros
 If you upgrated pip `>8.1.0` and installed python packages with `yum` pip might not work(`pip freeze` in particular ).
